@@ -244,7 +244,7 @@ impl CPU {
     fn nz_withSet(&self, value: u8, reg: WriteAddr) {
         let zero = value == 0;
         // 補数で負
-        let neg = !((value & 0x80).rotate_right(0x80) == 0);
+        let neg = (value & 0x80).rotate_right(0x80) != 0;
         self.register.P.set(State {
             N: neg,
             V: false,

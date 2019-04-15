@@ -2,7 +2,6 @@ pub mod cpu;
 pub mod ppu;
 pub mod memory;
 pub mod register;
-pub mod rom;
 pub mod op;
 
 use log::{info};

@@ -1,4 +1,4 @@
-use crate::arch::{cpu::CPU, Opeland, register::State, WriteAddr};
+use crate::arch::{cpu::CPU, register::State, Opeland, WriteAddr};
 
 #[derive(Debug, PartialEq)]
 pub enum OPCode {
@@ -264,7 +264,7 @@ impl CPU {
     }
 
     pub(crate) fn flag_op(&self, op: &OPCode) {
-        let ref state = self.register.P;
+        let state = &self.register.P;
         match op {
             CLC => state.set(State {
                 C: false,
@@ -323,7 +323,7 @@ impl CPU {
 
         // 残りの該当フラグを処理してレジスタに格納
         self.nz_withSet(result, WriteAddr::A);
-        let ref state = self.register.P;
+        let state = &self.register.P;
         state.set(State {
             C: carry,
             V: overflow,
@@ -335,18 +335,22 @@ impl CPU {
         let value = match opeland {
             Opeland::Value(value) => value,
             Opeland::Address(adr) => self.memory.read(adr as usize),
-            Opeland::None if op == &OPCode::INX  => self.register.X.get(),
-            Opeland::None if op == &OPCode::INY  => self.register.Y.get(),
-            Opeland::None if op == &OPCode::DEY  => self.register.Y.get(),
+            Opeland::None if op == &OPCode::INX => self.register.X.get(),
+            Opeland::None if op == &OPCode::INY => self.register.Y.get(),
+            Opeland::None if op == &OPCode::DEY => self.register.Y.get(),
             _ => unreachable!(),
         };
 
         match (op, opeland) {
-            (INC, Opeland::Address(addr)) => self.nz_withSet(value+1, WriteAddr::Memory(addr as usize)),
-            (DEC, Opeland::Address(addr)) => self.nz_withSet(value-1, WriteAddr::Memory(addr as usize)),
-            (INX, Opeland::None)  => self.nz_withSet(value+1, WriteAddr::X),
-            (INY, Opeland::None)  => self.nz_withSet(value+1, WriteAddr::Y),
-            (DEY, Opeland::None)  => self.nz_withSet(value-1, WriteAddr::Y),
+            (INC, Opeland::Address(addr)) => {
+                self.nz_withSet(value + 1, WriteAddr::Memory(addr as usize))
+            }
+            (DEC, Opeland::Address(addr)) => {
+                self.nz_withSet(value - 1, WriteAddr::Memory(addr as usize))
+            }
+            (INX, Opeland::None) => self.nz_withSet(value + 1, WriteAddr::X),
+            (INY, Opeland::None) => self.nz_withSet(value + 1, WriteAddr::Y),
+            (DEY, Opeland::None) => self.nz_withSet(value - 1, WriteAddr::Y),
             _ => unreachable!(),
         }
     }
@@ -401,14 +405,14 @@ impl CPU {
 
     pub(crate) fn branch_op(&self, op: &OPCode, opeland: u16) {
         match op {
-            BCC if self.register.P.get().C == false => self.register.PC.set(opeland),
-            BCS if self.register.P.get().C == true => self.register.PC.set(opeland),
-            BEQ if self.register.P.get().Z == true => self.register.PC.set(opeland),
-            BNE if self.register.P.get().Z == false => self.register.PC.set(opeland),
-            BVC if self.register.P.get().V == false => self.register.PC.set(opeland),
-            BVS if self.register.P.get().V == true => self.register.PC.set(opeland),
-            BPL if self.register.P.get().N == false => self.register.PC.set(opeland),
-            BMI if self.register.P.get().N == true => self.register.PC.set(opeland),
+            BCC if self.register.P.get().C => self.register.PC.set(opeland),
+            BCS if self.register.P.get().C => self.register.PC.set(opeland),
+            BEQ if self.register.P.get().Z => self.register.PC.set(opeland),
+            BNE if self.register.P.get().Z => self.register.PC.set(opeland),
+            BVC if self.register.P.get().V => self.register.PC.set(opeland),
+            BVS if self.register.P.get().V => self.register.PC.set(opeland),
+            BPL if self.register.P.get().N => self.register.PC.set(opeland),
+            BMI if self.register.P.get().N => self.register.PC.set(opeland),
             _ => (),
         }
     }

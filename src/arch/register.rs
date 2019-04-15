@@ -40,7 +40,7 @@ impl Register {
 
   // interrupt signal
   pub(crate) fn nmi(&self) {
-    let ref state = self.P;
+    let state = &self.P;
     state.set(State {
       I: true,
       B: false,
@@ -49,7 +49,7 @@ impl Register {
   }
 
   pub(crate) fn reset(&self) {
-    let ref state = self.P;
+    let state = &self.P;
     state.set(State {
       I: true,
       ..state.get()
@@ -57,7 +57,7 @@ impl Register {
   }
 
   pub(crate) fn irq(&self) {
-    let ref state = self.P;
+    let state = &self.P;
     let brk = !state.get().B;
     state.set(State {
       I: true,

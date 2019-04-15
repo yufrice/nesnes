@@ -1,7 +1,5 @@
-use std::cell::{RefCell};
-use std::rc::Rc;
 use log::info;
-
+use std::cell::RefCell;
 use crate::arch::memory::PPURegister;
 use crate::arch::RcRefCell;
 
@@ -79,9 +77,6 @@ pub(crate) struct PPUState {
 
 impl PPUState {
     fn new() -> PPUState {
-        PPUState {
-            Cycle: 0,
-            Line: 0,
-        }
+        PPUState { Cycle: 0, Line: 0 }
     }
 }

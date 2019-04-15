@@ -77,7 +77,7 @@ impl CPUMemory {
             let addr = addr - 0x8000usize;
             self.PRG_ROM[addr]
         } else {
-            unreachable!()
+            unreachable!("Out of Memory")
         }
     }
 
@@ -108,7 +108,8 @@ impl CPUMemory {
                 0x2006 => ppu_reg.PPUADDR.set(value),
                 0x2007 => {
                     ppu_reg.PPUDATA.set(value);
-                    let counter = self.ppu_addr_inc();
+                    //let counter = self.ppu_addr_inc();
+                    let counter = 0;
                     let addr = ppu_reg.PPUADDR.get();
                     ppu_reg.PPUADDR.set(addr + counter);
                 }

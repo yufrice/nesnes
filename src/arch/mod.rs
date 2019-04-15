@@ -20,7 +20,7 @@ pub(crate) enum WriteAddr {
 
 #[derive(Debug)]
 pub(crate) enum Opeland {
-    Address(u32),
+    Address(u16),
     Value(u8),
     Accumulator,
     None,
@@ -58,6 +58,7 @@ impl Arch {
     pub fn frame(&self) {
         let addr = self.cpu.fetch();
         let opecode = op::Operation::new(addr);
+        info!("{:?}", opecode);
         self.cpu.exec(&opecode);
         self.ppu.run(3*opecode.cycle);
     }

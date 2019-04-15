@@ -11,7 +11,7 @@ pub struct CPU {
 impl CPU {
 
     pub(crate) fn fetch(&self) -> u8 {
-        let addr = 0x8000u32 + self.register.PC.get() as u32;
+        let addr = 0x8000u16 + self.register.PC.get();
         self.register.pc_increment();
         self.memory.read(addr as usize)
     }

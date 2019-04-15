@@ -1,5 +1,4 @@
 use std::cell::{Cell, RefCell};
-use std::rc::Rc;
 
 use crate::arch::RcRefCell;
 
@@ -42,14 +41,14 @@ impl CPUMemory {
             self.WRAM.borrow()[addr]
         // PPU
         } else if addr < 0x2008usize {
-            let ref mut ppu_reg = self.IOP.borrow_mut();
+            let ppu_reg = &mut self.IOP.borrow_mut();
             match addr {
                 0x2000 => unreachable!(),
                 0x2001 => unreachable!(),
                 0x2002 => {
                     ppu_reg.PPUSCROLL.set(0x00);
                     ppu_reg.PPUSTATUS.get()
-                    },
+                }
                 0x2003 => unreachable!(),
                 0x2004 => ppu_reg.OAMDATA.get(),
                 0x2005 => unreachable!(),
@@ -59,7 +58,7 @@ impl CPUMemory {
                     let addr = ppu_reg.PPUADDR.get();
                     ppu_reg.PPUADDR.set(addr + counter);
                     ppu_reg.PPUDATA.get()
-                    },
+                }
                 _ => unreachable!(),
             }
         } else if addr < 0x4000usize {
@@ -85,17 +84,17 @@ impl CPUMemory {
     pub(crate) fn write(&self, value: u8, addr: usize) {
         // WRAM
         if addr < 0x0800usize {
-            let ref mut ram = self.WRAM.borrow_mut();
+            let ram = &mut self.WRAM.borrow_mut();
             ram[addr] = value;
         // WRAM mirror
         // addr - 0x0800
         } else if addr < 0x2000usize {
             let addr = addr - 0x2000usize;
-            let ref mut ram = self.WRAM.borrow_mut();
+            let ram = &mut self.WRAM.borrow_mut();
             ram[addr] = value;
         // PPU
         } else if addr < 0x2008usize {
-            let ref mut ppu_reg = self.IOP.borrow_mut();
+            let ppu_reg = &mut self.IOP.borrow_mut();
             match addr {
                 0x2000 => ppu_reg.PPUCTRL.set(value),
                 0x2001 => ppu_reg.PPUMASK.set(value),
@@ -126,7 +125,7 @@ impl CPUMemory {
         }
     }
 
-    pub(crate) fn ppu_addr_inc (&self) -> u8 {
+    pub(crate) fn ppu_addr_inc(&self) -> u8 {
         let ppu_reg = self.IOP.borrow();
         if 0 != (ppu_reg.PPUCTRL.get() & 0x02) {
             1

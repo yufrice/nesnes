@@ -37,7 +37,7 @@ pub fn run(arch: Arch) {
         .with_lock(None, |buffer: &mut [u8], pitch: usize| {
             for (sprite_idx, sprite) in character.chunks(16).enumerate() {
                 let (pixel0, pixel1) = sprite.split_at(8);
-                for (idx, (pix0, pix1)) in pixel0.into_iter().zip(pixel1).enumerate() {
+                for (idx, (pix0, pix1)) in pixel0.iter().zip(pixel1).enumerate() {
                     for x in (0..8).rev() {
                         // N^3 -> N^1
                         fn sprite_next(idx: usize) -> usize {

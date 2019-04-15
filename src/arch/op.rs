@@ -355,9 +355,12 @@ impl CPU {
         }
     }
 
-    pub(crate) fn jump_op(&self, op: &OPCode, opeland: usize) {
+    pub(crate) fn jump_op(&self, op: &OPCode, opeland: u16) {
         match op {
-            JMP => self.register.PC.set(opeland as u16),
+            JMP => {
+                let addr = opeland - 0x8000;
+                self.register.PC.set(addr)
+            }
             JSR => {
                 self.stack_push();
             }

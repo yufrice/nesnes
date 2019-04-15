@@ -1,5 +1,3 @@
-use log::info;
-
 use crate::arch::{cpu::CPU, Opeland, register::State, WriteAddr};
 
 #[derive(Debug, PartialEq)]
@@ -229,7 +227,7 @@ impl Operation {
 
             // Implied
             0x00 => create(BRK, Implied, 7),
-            0x01 => create(NOP, Implied, 2),
+            0xEA => create(NOP, Implied, 2),
             0x18 => create(CLC, Implied, 2),
             0xD8 => create(CLD, Implied, 2),
             0x58 => create(CLI, Implied, 2),

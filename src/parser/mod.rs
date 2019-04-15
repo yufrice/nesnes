@@ -1,13 +1,11 @@
-use std::fmt::{Debug, Display};
 use std::io::{BufReader, Error, Read};
-use std::{fs, mem};
+use std::{fs};
+use std::boxed::Box;
 
 use crate::arch;
 use arch::Arch;
-use arch::cpu::CPU;
-use arch::ppu::PPU;
 
-pub fn parser<'a>(path: &'a str) -> Result<arch::Arch, String> {
+pub fn parser<'a>(path: &'a str) -> Result<Arch, String> {
     let mut f = fs::File::open(path).map_err(|v| format!("{}", v))?;
     let mut b = BufReader::new(f).bytes();
 
@@ -47,10 +45,5 @@ pub fn parser<'a>(path: &'a str) -> Result<arch::Arch, String> {
         .collect::<Result<Vec<u8>, _>>()
         .map_err(|err| err.to_string())?;
 
-    let cpu = CPU::new(prg);
-    let ppu = PPU::new(chr);
-    Ok(Arch {
-        cpu: cpu,
-        ppu: ppu,
-    })
+    Ok(Arch::new(prg, chr))
 }

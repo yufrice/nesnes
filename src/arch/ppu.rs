@@ -1,20 +1,25 @@
-use std::cell::RefCell;
+use std::cell::{RefCell};
+use std::rc::Rc;
 use log::info;
 
-pub struct PPU {
+use crate::arch::memory::PPURegister;
+use crate::arch::RcRefCell;
+
+pub(crate) struct PPU {
     /// CHR
-    Pattern: Vec<u8>,
-    NameTable0: [u8; 0x0400],
-    NameTable1: [u8; 0x0400],
-    NameTable2: [u8; 0x0400],
-    NameTable3: [u8; 0x0400],
-    Pallete: [u8; 0x0020],
-    State: RefCell<PPUState>,
+    pub(crate) Pattern: Vec<u8>,
+    pub(crate) NameTable0: [u8; 0x0400],
+    pub(crate) NameTable1: [u8; 0x0400],
+    pub(crate) NameTable2: [u8; 0x0400],
+    pub(crate) NameTable3: [u8; 0x0400],
+    pub(crate) Pallete: [u8; 0x0020],
+    pub(crate) State: RefCell<PPUState>,
+    pub(crate) IOC: RcRefCell<PPURegister>,
 }
 
 
 impl PPU {
-    pub fn new(chr: Vec<u8>) -> PPU {
+    pub fn new(chr: Vec<u8>, ioc: RcRefCell<PPURegister>) -> PPU {
         let state = PPUState::new();
         PPU {
             Pattern: chr,
@@ -24,6 +29,8 @@ impl PPU {
             NameTable3: [0x00; 0x0400],
             Pallete: [0x00; 0x0020],
             State: RefCell::new(state),
+            /// I/O CPU Register
+            IOC: ioc,
         }
     }
 

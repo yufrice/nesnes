@@ -1,5 +1,3 @@
-use log::info;
-
 use crate::arch::memory::*;
 use crate::arch::op::{AddressingMode, OPCode, Operation};
 use crate::arch::register::*;
@@ -11,16 +9,6 @@ pub struct CPU {
 }
 
 impl CPU {
-    pub fn new(rom: Vec<u8>) -> CPU {
-        let register = Register::new();
-        let memory = CPUMemory::new(rom);
-
-        info!("CPU init");
-        CPU {
-            register: register,
-            memory: memory,
-        }
-    }
 
     pub(crate) fn fetch(&self) -> u8 {
         let addr = 0x8000u32 + self.register.PC.get() as u32;

@@ -1,9 +1,7 @@
-use log::info;
-
 use crate::arch::memory::*;
 use crate::arch::op::{AddressingMode, OPCode, Operation};
 use crate::arch::register::*;
-use crate::arch::{Opeland};
+use crate::arch::Opeland;
 
 pub struct CPU {
     pub(crate) register: Register,
@@ -11,19 +9,9 @@ pub struct CPU {
 }
 
 impl CPU {
-    pub fn new(rom: Vec<u8>) -> CPU {
-        let register = Register::new();
-        let memory = CPUMemory::new(rom);
-
-        info!("CPU init");
-        CPU {
-            register: register,
-            memory: memory,
-        }
-    }
 
     pub(crate) fn fetch(&self) -> u8 {
-        let addr = 0x8000u32 + self.register.PC.get() as u32;
+        let addr = 0x8000u16 + self.register.PC.get();
         self.register.pc_increment();
         self.memory.read(addr as usize)
     }
@@ -46,8 +34,7 @@ impl CPU {
             | (OPCode::SEI, Opeland::None)
             | (OPCode::CLD, Opeland::None)
             | (OPCode::SED, Opeland::None)
-            | (OPCode::CLV, Opeland::None)
-            => self.flag_op(&opcode.op),
+            | (OPCode::CLV, Opeland::None) => self.flag_op(&opcode.op),
 
             // Aレジスタ Acc
             (OPCode::ADC, opeland)
@@ -55,40 +42,59 @@ impl CPU {
             | (OPCode::ASL, opeland)
             | (OPCode::LSR, opeland)
             | (OPCode::ROL, opeland)
-            | (OPCode::ROR, opeland)
-            => self.acc_op(&opcode.op, match opeland { Opeland::Value(val) => val, Opeland::Address(adr) => self.memory.read(adr as usize), _ => unreachable!() }),
+            | (OPCode::ROR, opeland) => self.acc_op(
+                &opcode.op,
+                match opeland {
+                    Opeland::Value(val) => val,
+                    Opeland::Address(adr) => self.memory.read(adr as usize),
+                    _ => unreachable!(),
+                },
+            ),
 
             // (in,de) crement
             (OPCode::INC, opeland)
             | (OPCode::DEC, opeland)
             | (OPCode::INX, opeland)
             | (OPCode::INY, opeland)
-            | (OPCode::DEY, opeland)
-            => self.register_acc_op(&opcode.op, opeland),
+            | (OPCode::DEY, opeland) => self.register_acc_op(&opcode.op, opeland),
 
             // Logic
-            (OPCode::AND, opeland)
-            | (OPCode::ORA, opeland)
-            | (OPCode::EOR, opeland) 
-            => self.logic_op(&opcode.op, match opeland { Opeland::Value(val) => val, Opeland::Address(adr) => self.memory.read(adr as usize), _ => unreachable!()}),
+            (OPCode::AND, opeland) | (OPCode::ORA, opeland) | (OPCode::EOR, opeland) => self
+                .logic_op(
+                    &opcode.op,
+                    match opeland {
+                        Opeland::Value(val) => val,
+                        Opeland::Address(adr) => self.memory.read(adr as usize),
+                        _ => unreachable!(),
+                    },
+                ),
 
             // Load
-            (OPCode::LDA, opeland)
-            | (OPCode::LDX, opeland)
-            | (OPCode::LDY, opeland) => self.load_op(&opcode.op, opeland),
+            (OPCode::LDA, opeland) | (OPCode::LDX, opeland) | (OPCode::LDY, opeland) => {
+                self.load_op(&opcode.op, opeland)
+            }
 
             // Store
-            (OPCode::STA, opeland)
-            | (OPCode::STX, opeland)
-            | (OPCode::STY, opeland)
-            => self.store_op(&opcode.op, match opeland { Opeland::Address(adr) => adr as usize, _ => unreachable!()}),
+            (OPCode::STA, opeland) | (OPCode::STX, opeland) | (OPCode::STY, opeland) => self
+                .store_op(
+                    &opcode.op,
+                    match opeland {
+                        Opeland::Address(adr) => adr as usize,
+                        _ => unreachable!(),
+                    },
+                ),
 
             // Jump
             (OPCode::JMP, opeland)
             | (OPCode::JSR, opeland)
             | (OPCode::RTS, opeland)
-            | (OPCode::RTI, opeland)
-            => self.jump_op(&opcode.op, match opeland { Opeland::Address(adr) => adr as usize, _ => unreachable!()}),
+            | (OPCode::RTI, opeland) => self.jump_op(
+                &opcode.op,
+                match opeland {
+                    Opeland::Address(adr) => adr as usize,
+                    _ => unreachable!(),
+                },
+            ),
 
             // Copy
             (OPCode::TAX, Opeland::None)
@@ -106,8 +112,13 @@ impl CPU {
             | (OPCode::BNE, opeland)
             | (OPCode::BPL, opeland)
             | (OPCode::BVC, opeland)
-            | (OPCode::BVS, opeland)
-            => self.branch_op(&opcode.op, match opeland { Opeland::Address(adr) => self.memory.read(adr as usize) as u16, _ => unreachable!()}),
+            | (OPCode::BVS, opeland) => self.branch_op(
+                &opcode.op,
+                match opeland {
+                    Opeland::Address(adr) => self.memory.read(adr as usize) as u16,
+                    _ => unreachable!(),
+                },
+            ),
 
             _ => unimplemented!("{:?}", opcode.op),
         }
@@ -137,9 +148,9 @@ impl CPU {
                 // 補数表現
                 let addr = if addr0 < 0x80 {
                     addr0 + pc
-                    } else {
+                } else {
                     addr0 + pc - 256u32
-                    };
+                };
                 Opeland::Address(addr as u32)
             }
             AddressingMode::Absolute => {
@@ -189,18 +200,5 @@ impl CPU {
             AddressingMode::Immediate => Opeland::Value(self.fetch()),
             _ => unreachable!(),
         }
-    }
-}
-
-
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use test::Bencher;
-    #[bench]
-    fn bench_init_CPU(b: &mut Bencher) {
-        let prg: Vec<u8> = [1u8; 40usize*1024usize].to_vec();
-        b.iter(|| CPU::new(prg));
     }
 }

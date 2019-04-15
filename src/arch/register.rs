@@ -18,12 +18,10 @@ pub struct Register {
   pub(crate) P: Cell<State>,
 }
 
-impl Register {
-  pub(crate) fn new() -> Register {
-    let state = State::new();
-
-    info!("Register init");
-    Register {
+impl Default for Register {
+  fn default() -> Self {
+    let state = State::default();
+    Self {
       A: Cell::new(0x00),
       X: Cell::new(0x00),
       Y: Cell::new(0x00),
@@ -32,15 +30,16 @@ impl Register {
       P: Cell::new(state),
     }
   }
+}
 
-
+impl Register {
   pub(crate) fn pc_increment(&self) {
     self.PC.set(1 + self.PC.get());
   }
 
   // interrupt signal
   pub(crate) fn nmi(&self) {
-    let ref state = self.P;
+    let state = &self.P;
     state.set(State {
       I: true,
       B: false,
@@ -49,7 +48,7 @@ impl Register {
   }
 
   pub(crate) fn reset(&self) {
-    let ref state = self.P;
+    let state = &self.P;
     state.set(State {
       I: true,
       ..state.get()
@@ -57,7 +56,7 @@ impl Register {
   }
 
   pub(crate) fn irq(&self) {
-    let ref state = self.P;
+    let state = &self.P;
     let brk = !state.get().B;
     state.set(State {
       I: true,
@@ -79,9 +78,9 @@ pub struct State {
   pub(crate) C: bool,
 }
 
-impl State {
-  pub fn new() -> State {
-    State {
+impl Default for State {
+  fn default() -> Self {
+    Self {
       N: false,
       V: false,
       B: true,

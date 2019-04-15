@@ -1,7 +1,6 @@
-use log::info;
 use std::cell::{Cell, RefCell};
 
-use crate::arch::ppu;
+use crate::arch::RcRefCell;
 
 /// WRAM: 2KByte
 /// IOP: PPU I/O
@@ -12,21 +11,20 @@ use crate::arch::ppu;
 /// ROMも同様
 pub struct CPUMemory {
     /// 2KB WRAM
-    pub WRAM: RefCell<[u8; 0x0800]>,
+    pub(crate) WRAM: RefCell<[u8; 0x0800]>,
     /// PPUレジスタ
-    pub IOP: PPURegister,
+    pub(crate) IOP: RcRefCell<PPURegister>,
     /// APU, PAD
-    pub IOA: [u8; 0x0020],
+    pub(crate) IOA: [u8; 0x0020],
     /// ROMプログラム部
-    pub PRG_ROM: Vec<u8>,
+    pub(crate) PRG_ROM: Vec<u8>,
 }
 
 impl CPUMemory {
-    pub(crate) fn new(rom: Vec<u8>) -> CPUMemory {
-        let ppu_reg = PPURegister::new();
+    pub(crate) fn new(rom: Vec<u8>, prg: RcRefCell<PPURegister>) -> CPUMemory {
         CPUMemory {
             WRAM: RefCell::new([0x00; 0x0800]),
-            IOP: ppu_reg,
+            IOP: prg,
             IOA: [0x00; 0x0020],
             PRG_ROM: rom,
         }
@@ -43,23 +41,24 @@ impl CPUMemory {
             self.WRAM.borrow()[addr]
         // PPU
         } else if addr < 0x2008usize {
+            let ppu_reg = &mut self.IOP.borrow_mut();
             match addr {
                 0x2000 => unreachable!(),
                 0x2001 => unreachable!(),
                 0x2002 => {
-                    self.IOP.PPUSCROLL.set(0x00);
-                    self.IOP.PPUSTATUS.get()
-                    },
+                    ppu_reg.PPUSCROLL.set(0x00);
+                    ppu_reg.PPUSTATUS.get()
+                }
                 0x2003 => unreachable!(),
-                0x2004 => self.IOP.OAMDATA.get(),
+                0x2004 => ppu_reg.OAMDATA.get(),
                 0x2005 => unreachable!(),
                 0x2006 => unreachable!(),
                 0x2007 => {
                     let counter = self.ppu_addr_inc();
-                    let addr = self.IOP.PPUADDR.get();
-                    self.IOP.PPUADDR.set(addr + counter);
-                    self.IOP.PPUDATA.get()
-                    },
+                    let addr = ppu_reg.PPUADDR.get();
+                    ppu_reg.PPUADDR.set(addr + counter);
+                    ppu_reg.PPUDATA.get()
+                }
                 _ => unreachable!(),
             }
         } else if addr < 0x4000usize {
@@ -85,32 +84,33 @@ impl CPUMemory {
     pub(crate) fn write(&self, value: u8, addr: usize) {
         // WRAM
         if addr < 0x0800usize {
-            let ref mut ram = self.WRAM.borrow_mut();
+            let ram = &mut self.WRAM.borrow_mut();
             ram[addr] = value;
         // WRAM mirror
         // addr - 0x0800
         } else if addr < 0x2000usize {
             let addr = addr - 0x2000usize;
-            let ref mut ram = self.WRAM.borrow_mut();
+            let ram = &mut self.WRAM.borrow_mut();
             ram[addr] = value;
         // PPU
         } else if addr < 0x2008usize {
+            let ppu_reg = &mut self.IOP.borrow_mut();
             match addr {
-                0x2000 => self.IOP.PPUCTRL.set(value),
-                0x2001 => self.IOP.PPUMASK.set(value),
+                0x2000 => ppu_reg.PPUCTRL.set(value),
+                0x2001 => ppu_reg.PPUMASK.set(value),
                 0x2002 => unreachable!(),
-                0x2003 => self.IOP.OAMADDR.set(value),
+                0x2003 => ppu_reg.OAMADDR.set(value),
                 0x2004 => {
-                    self.IOP.OAMDATA.set(value);
-                    self.IOP.OAMADDR.set(self.IOP.OAMADDR.get() + 1);
+                    ppu_reg.OAMDATA.set(value);
+                    ppu_reg.OAMADDR.set(ppu_reg.OAMADDR.get() + 1);
                 }
-                0x2005 => self.IOP.PPUSCROLL.set(value),
-                0x2006 => self.IOP.PPUADDR.set(value),
+                0x2005 => ppu_reg.PPUSCROLL.set(value),
+                0x2006 => ppu_reg.PPUADDR.set(value),
                 0x2007 => {
-                    self.IOP.PPUDATA.set(value);
+                    ppu_reg.PPUDATA.set(value);
                     let counter = self.ppu_addr_inc();
-                    let addr = self.IOP.PPUADDR.get();
-                    self.IOP.PPUADDR.set(addr + counter);
+                    let addr = ppu_reg.PPUADDR.get();
+                    ppu_reg.PPUADDR.set(addr + counter);
                 }
                 _ => unreachable!(),
             };
@@ -125,8 +125,9 @@ impl CPUMemory {
         }
     }
 
-    pub(crate) fn ppu_addr_inc (&self) -> u8 {
-        if 0 != (self.IOP.PPUCTRL.get() & 0x02) {
+    pub(crate) fn ppu_addr_inc(&self) -> u8 {
+        let ppu_reg = self.IOP.borrow();
+        if 0 != (ppu_reg.PPUCTRL.get() & 0x02) {
             1
         } else {
             32
@@ -136,7 +137,7 @@ impl CPUMemory {
 
 /// PPU Register
 #[derive(Debug)]
-pub struct PPURegister {
+pub(crate) struct PPURegister {
     /// コントロールレジスタ  
     /// $2000 Write
     /// - 7 NMI enable
@@ -182,9 +183,9 @@ pub struct PPURegister {
     pub PPUDATA: Cell<u8>,
 }
 
-impl PPURegister {
-    pub(crate) fn new() -> PPURegister {
-        PPURegister {
+impl Default for PPURegister {
+    fn default() -> Self {
+        Self {
             PPUCTRL: Cell::new(0b01000000),
             PPUMASK: Cell::new(0x00),
             PPUSTATUS: Cell::new(0x00),

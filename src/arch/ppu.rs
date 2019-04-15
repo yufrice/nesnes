@@ -18,7 +18,7 @@ pub(crate) struct PPU {
 
 impl PPU {
     pub fn new(chr: Vec<u8>, ioc: RcRefCell<PPURegister>) -> PPU {
-        let state = PPUState::new();
+        let state = PPUState::default();
         PPU {
             Pattern: chr,
             NameTable0: [0x00; 0x0400],
@@ -75,8 +75,8 @@ pub(crate) struct PPUState {
     Line: u32,
 }
 
-impl PPUState {
-    fn new() -> PPUState {
-        PPUState { Cycle: 0, Line: 0 }
+impl Default for PPUState {
+    fn default() -> Self {
+        Self { Cycle: 0, Line: 0 }
     }
 }

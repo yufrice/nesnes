@@ -18,12 +18,10 @@ pub struct Register {
   pub(crate) P: Cell<State>,
 }
 
-impl Register {
-  pub(crate) fn new() -> Register {
-    let state = State::new();
-
-    info!("Register init");
-    Register {
+impl Default for Register {
+  fn default() -> Self {
+    let state = State::default();
+    Self {
       A: Cell::new(0x00),
       X: Cell::new(0x00),
       Y: Cell::new(0x00),
@@ -32,8 +30,9 @@ impl Register {
       P: Cell::new(state),
     }
   }
+}
 
-
+impl Register {
   pub(crate) fn pc_increment(&self) {
     self.PC.set(1 + self.PC.get());
   }
@@ -79,9 +78,9 @@ pub struct State {
   pub(crate) C: bool,
 }
 
-impl State {
-  pub fn new() -> State {
-    State {
+impl Default for State {
+  fn default() -> Self {
+    Self {
       N: false,
       V: false,
       B: true,

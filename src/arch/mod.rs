@@ -34,9 +34,9 @@ pub struct Arch {
 impl Arch {
     pub fn new(rom: Vec<u8>, chr: Vec<u8>) -> Arch {
         info!("PPU Register init");
-        let ppu_reg = Rc::new(RefCell::new(PPURegister::new()));
+        let ppu_reg = Rc::new(RefCell::new(PPURegister::default()));
         info!("CPU Register init");
-        let cpu_reg = Register::new();
+        let cpu_reg = Register::default();
         info!("Memory init");
         let memory = CPUMemory::new(rom, ppu_reg.clone());
 

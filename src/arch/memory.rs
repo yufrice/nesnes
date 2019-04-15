@@ -183,9 +183,9 @@ pub(crate) struct PPURegister {
     pub PPUDATA: Cell<u8>,
 }
 
-impl PPURegister {
-    pub(crate) fn new() -> PPURegister {
-        PPURegister {
+impl Default for PPURegister {
+    fn default() -> Self {
+        Self {
             PPUCTRL: Cell::new(0b01000000),
             PPUMASK: Cell::new(0x00),
             PPUSTATUS: Cell::new(0x00),

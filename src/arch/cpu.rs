@@ -191,16 +191,3 @@ impl CPU {
         }
     }
 }
-
-
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use test::Bencher;
-    #[bench]
-    fn bench_init_CPU(b: &mut Bencher) {
-        let prg: Vec<u8> = [1u8; 40usize*1024usize].to_vec();
-        b.iter(|| CPU::new(prg));
-    }
-}

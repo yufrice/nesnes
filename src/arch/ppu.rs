@@ -31,9 +31,13 @@ impl PPU {
         let state = &self.State;
         let line = state.borrow().Line;
         state.borrow_mut().Cycle += cycle;
-        if line == 0 {
+        match line {
             // background
             // sprites generate
+            0 => (),
+            // pre render line VBLANk
+            261 => (),
+            _ => unreachable!(),
         }
 
         // 341クロックで1line描写

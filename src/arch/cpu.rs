@@ -51,6 +51,19 @@ impl CPU {
                 },
             ),
 
+            // compare
+            (OPCode::CMP, opeland)
+            | (OPCode::CPX, opeland)
+            | (OPCode::CPY, opeland) => self.compare_op(
+                &opcode.op,
+                match opeland {
+                    Opeland::Value(val) => val,
+                    Opeland::Address(adr) => self.memory.read(adr as usize),
+                    _ => unreachable!(),
+                },
+
+            ),
+
             // (in,de) crement
             (OPCode::INC, opeland)
             | (OPCode::DEC, opeland)
@@ -157,7 +170,6 @@ impl CPU {
                 let addr_low = self.fetch() as u16;
                 let addr_high = (self.fetch() as u16).rotate_left(8);
                 let addr = addr_high + addr_low;
-                println!("{:x}", addr);
                 Opeland::Address(addr as u16)
             }
             AddressingMode::AbsoluteX => {

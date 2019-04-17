@@ -213,7 +213,7 @@ impl Operation {
             0xB4 => create(LDY, ZeroPageX, 4),
             0xAC => create(LDY, Absolute, 4),
             0xBC => create(LDY, AbsoluteX, 4),
-            // STA
+            // STA周り
             0x85 => create(STA, ZeroPage, 3),
             0x95 => create(STA, ZeroPageX, 4),
             0x8D => create(STA, Absolute, 4),
@@ -271,7 +271,7 @@ impl CPU {
         }
     }
 
-    pub(crate) fn nzc_withSet(&self, pre: u8, rhs: u8, result: u16, addr: WriteAddr) {
+    pub(crate) fn nzc_withSet(&self,result: u16, addr: WriteAddr) {
         // 符号なしオーバーフロー
         let carry = result > 0xFF;
         // フローカット
@@ -293,7 +293,7 @@ impl CPU {
         let result = result & 0xFF;
 
         // 残りの該当フラグを処理してレジスタに格納
-        self.nzc_withSet(pre as u8, rhs as u8, result, addr);
+        self.nzc_withSet(result, addr);
         let state = &self.register.P;
         state.set(State {
             V: overflow,
@@ -349,7 +349,7 @@ impl CPU {
 
         let result = (lhs as i16 - opeland as i16) as u16;
 
-       self.nzc_withSet(lhs, opeland, result, WriteAddr::None);
+       self.nzc_withSet(result, WriteAddr::None);
     }
 
     pub(crate) fn acc_op(&self, op: &OPCode, opeland: u8) {

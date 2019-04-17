@@ -187,7 +187,7 @@ pub(crate) struct PPURegister {
 impl Default for PPURegister {
     fn default() -> Self {
         Self {
-            PPUCTRL: Cell::new(0b01000000),
+            PPUCTRL: Cell::new(0b0100_0000),
             PPUMASK: Cell::new(0x00),
             PPUSTATUS: Cell::new(0x00),
             OAMADDR: Cell::new(0x00),

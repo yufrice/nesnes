@@ -43,15 +43,15 @@ impl Arch {
         info!("CPU init");
         let cpu = CPU {
             register: cpu_reg,
-            memory: memory,
+            memory,
         };
 
         info!("PPU init");
         let ppu = PPU::new(chr, ppu_reg);
         info!("Init done");
         Arch {
-            cpu: cpu,
-            ppu: ppu,
+            cpu,
+            ppu,
         }
     }
 

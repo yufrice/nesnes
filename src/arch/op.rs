@@ -347,14 +347,14 @@ impl CPU {
             _ => unreachable!(),
         };
 
-        let result = (lhs as i16 - opeland as i16) as u16;
+        let result = (i16::from(lhs) - i16::from(opeland)) as u16;
 
        self.nzc_withSet(result, WriteAddr::None);
     }
 
     pub(crate) fn acc_op(&self, op: &OPCode, opeland: u8) {
-        let pre_a = self.register.A.get() as u16;
-        let opeland = opeland as u16;
+        let pre_a = u16::from(self.register.A.get());
+        let opeland = u16::from(opeland);
         let result = match op {
             ADC => pre_a + opeland + (self.register.P.get().C as u16),
             SBC => pre_a - opeland + (self.register.P.get().C as u16),
@@ -460,8 +460,8 @@ impl CPU {
 
 fn create(op: OPCode, mode: AddressingMode, cycle: u32) -> Operation {
     Operation {
-        op: op,
-        mode: mode,
-        cycle: cycle,
+        op,
+        mode,
+        cycle,
     }
 }

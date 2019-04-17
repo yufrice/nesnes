@@ -123,7 +123,6 @@ impl Operation {
             0x39 => create(AND, AbsoluteY, 4),
             0x21 => create(AND, Indirect, 6),
             0x31 => create(AND, IndirectY, 5),
-            // ASL
             0x06 => create(ASL, ZeroPage, 5),
             0x0A => create(ASL, Accumulator, 2),
             0x0E => create(ASL, Absolute, 6),
@@ -192,7 +191,6 @@ impl Operation {
             // RTI
 
             // Load
-            // LDA
             0xA1 => create(LDA, IndirectX, 6),
             0xA5 => create(LDA, ZeroPage, 2),
             0xA9 => create(LDA, Immediate, 2),

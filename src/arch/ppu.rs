@@ -1,15 +1,11 @@
 use std::cell::RefCell;
-use crate::arch::memory::PPURegister;
+
+use crate::arch::memory::{PPURegister, PPUMemory};
 use crate::arch::RcRefCell;
 
 pub(crate) struct PPU {
     /// CHR
     pub(crate) Pattern: Vec<u8>,
-    pub(crate) NameTable0: [u8; 0x0400],
-    pub(crate) NameTable1: [u8; 0x0400],
-    pub(crate) NameTable2: [u8; 0x0400],
-    pub(crate) NameTable3: [u8; 0x0400],
-    pub(crate) Pallete: [u8; 0x0020],
     pub(crate) State: RefCell<PPUState>,
     pub(crate) IOC: RcRefCell<PPURegister>,
 }
@@ -20,11 +16,6 @@ impl PPU {
         let state = PPUState::default();
         PPU {
             Pattern: chr,
-            NameTable0: [0x00; 0x0400],
-            NameTable1: [0x00; 0x0400],
-            NameTable2: [0x00; 0x0400],
-            NameTable3: [0x00; 0x0400],
-            Pallete: [0x00; 0x0020],
             State: RefCell::new(state),
             /// I/O CPU Register
             IOC: ioc,
@@ -38,9 +29,10 @@ impl PPU {
         match line {
             // background
             // sprites generate
-            0 => (),
+            // 8 x 8 x 8
+            0...239 if line % 8 == 0 => self.sprite_generate(),
             // pre render line VBLANk
-            261 => (),
+            240...261 => (),
             _ => (),
         }
 
@@ -62,6 +54,10 @@ impl PPU {
 
     pub fn sprite_flush(&self) -> &Vec<u8> {
         &self.Pattern
+    }
+
+    pub fn sprite_generate(&self) {
+        let PPUMemory(ref vram) = self.IOC.borrow().PPUDATA;
     }
 }
 

@@ -36,6 +36,12 @@ impl Register {
     self.PC.set(1 + self.PC.get());
   }
 
+  pub(crate) fn soft_reset(&self) {
+    self.P.set(
+      State::default()
+    );
+  }
+
   // interrupt signal
   pub(crate) fn nmi(&self) {
     let state = &self.P;
@@ -46,7 +52,7 @@ impl Register {
     })
   }
 
-  pub(crate) fn reset(&self) {
+  pub(crate) fn hard_reset(&self) {
     let state = &self.P;
     state.set(State {
       I: true,

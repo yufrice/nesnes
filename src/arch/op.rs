@@ -391,6 +391,7 @@ impl CPU {
     }
 
     pub(crate) fn jump_op(&self, op: &OPCode, opeland: u16) {
+        self.register.soft_reset();
         match op {
             JMP => {
                 let addr = opeland - 0x8000;
@@ -433,6 +434,7 @@ impl CPU {
     }
 
     pub(crate) fn store_op(&self, op: &OPCode, opeland: usize) {
+        self.register.soft_reset();
         match op {
             STA => self.memory.write(self.register.A.get(), opeland),
             STX => self.memory.write(self.register.X.get(), opeland),
@@ -443,16 +445,17 @@ impl CPU {
 
     pub(crate) fn branch_op(&self, op: &OPCode, opeland: u16) {
         match op {
-            BCC if self.register.P.get().C => self.register.PC.set(opeland),
+            BCC if !self.register.P.get().C => self.register.PC.set(opeland),
             BCS if self.register.P.get().C => self.register.PC.set(opeland),
             BEQ if self.register.P.get().Z => self.register.PC.set(opeland),
-            BNE if self.register.P.get().Z => self.register.PC.set(opeland),
-            BVC if self.register.P.get().V => self.register.PC.set(opeland),
-            BVS if self.register.P.get().V => self.register.PC.set(opeland),
-            BPL if self.register.P.get().N => self.register.PC.set(opeland),
+            BNE if !self.register.P.get().Z => self.register.PC.set(opeland),
+            BVC if !self.register.P.get().V => self.register.PC.set(opeland),
+            BVS if !self.register.P.get().V => self.register.PC.set(opeland),
+            BPL if !self.register.P.get().N => self.register.PC.set(opeland),
             BMI if self.register.P.get().N => self.register.PC.set(opeland),
             _ => (),
-        }
+        };
+        self.register.soft_reset();
     }
 }
 

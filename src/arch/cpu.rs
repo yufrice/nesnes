@@ -128,7 +128,7 @@ impl CPU {
             | (OPCode::BVS, opeland) => self.branch_op(
                 &opcode.op,
                 match opeland {
-                    Opeland::Address(adr) => u16::from(self.memory.read(adr as usize)),
+                    Opeland::Address(adr) => adr,
                     _ => unreachable!(),
                 },
             ),
@@ -157,12 +157,12 @@ impl CPU {
             }
             AddressingMode::Relative => {
                 let addr0 = u16::from(self.fetch());
-                let pc = self.register.PC.get();
+                let addr1 = self.register.PC.get();
                 // 補数表現
                 let addr = if addr0 < 0x80 {
-                    addr0 + pc
+                    addr0 + addr1
                 } else {
-                    addr0 + pc - 256u16
+                    addr0 + addr1 - 256
                 };
                 Opeland::Address(addr as u16)
             }

@@ -130,7 +130,14 @@ impl Operation {
             0x16 => create(ASL, ZeroPageX, 6),
             0x1E => create(ASL, AbsoluteX, 7),
             // BIT
-            // CMP
+            0xC9 => create(CMP, Immediate, 2),
+            0xC5 => create(CMP, ZeroPage, 3),
+            0xD5 => create(CMP, ZeroPageX, 4),
+            0xCD => create(CMP, Absolute, 4),
+            0xDD => create(CMP, AbsoluteX, 4),
+            0xD9 => create(CMP, AbsoluteY, 4),
+            0xC1 => create(CMP, IndirectX, 6),
+            0xD1 => create(CMP, IndirectY, 5),
             // CPX
             // CPY
             // DEC
@@ -241,7 +248,7 @@ impl Operation {
 }
 
 impl CPU {
-    fn nz_withSet(&self, value: u8, reg: WriteAddr) {
+    fn nz_withSet(&self, value: u8, addr: WriteAddr) {
         let zero = value == 0;
         // 補数で負
         let neg = (value & 0x80).rotate_right(0x80) != 0;
@@ -253,14 +260,45 @@ impl CPU {
             Z: zero,
             C: false,
         });
-        match reg {
+        match addr {
             WriteAddr::A => self.register.A.set(value),
             WriteAddr::X => self.register.X.set(value),
             WriteAddr::Y => self.register.Y.set(value),
             WriteAddr::SP => self.register.SP.set(value),
             WriteAddr::Memory(addr) => self.memory.write(value, addr),
+            WriteAddr::None => (),
             _ => unreachable!(),
         }
+    }
+
+    pub(crate) fn nzc_withSet(&self, pre: u8, rhs: u8, result: u16, addr: WriteAddr) {
+        // 符号なしオーバーフロー
+        let carry = result > 0xFF;
+        // フローカット
+        let result = result & 0xFF;
+
+        // 残りの該当フラグを処理してレジスタに格納
+        self.nz_withSet(result as u8, addr);
+        let state = &self.register.P;
+        state.set(State {
+            C: carry,
+            ..state.get()
+        });
+    }
+
+    pub(crate) fn nvzc_withSet(&self, pre: u16, rhs: u16, result: u16, addr: WriteAddr) {
+        // 符号ありオーバーフロー
+        let overflow = 0 != ((pre ^ result) & (rhs ^ result) & 0x80);
+        // フローカット
+        let result = result & 0xFF;
+
+        // 残りの該当フラグを処理してレジスタに格納
+        self.nzc_withSet(pre as u8, rhs as u8, result, addr);
+        let state = &self.register.P;
+        state.set(State {
+            V: overflow,
+            ..state.get()
+        });
     }
 
     pub(crate) fn flag_op(&self, op: &OPCode) {
@@ -301,6 +339,19 @@ impl CPU {
         }
     }
 
+    pub(crate) fn compare_op(&self, op: &OPCode, opeland: u8) {
+        let lhs = match op {
+            CMP => self.register.A.get(),
+            CPX => self.register.X.get(),
+            CPY => self.register.Y.get(),
+            _ => unreachable!(),
+        };
+
+        let result = (lhs as i16 - opeland as i16) as u16;
+
+       self.nzc_withSet(lhs, opeland, result, WriteAddr::None);
+    }
+
     pub(crate) fn acc_op(&self, op: &OPCode, opeland: u8) {
         let pre_a = self.register.A.get() as u16;
         let opeland = opeland as u16;
@@ -314,21 +365,7 @@ impl CPU {
             _ => unreachable!(),
         };
 
-        // 符号なしオーバーフロー
-        let carry = pre_a > 0xFF;
-        // 符号ありオーバーフロー
-        let overflow = 0 != ((pre_a ^ result) & (opeland ^ result) & 0x80);
-        // フローカット
-        let result = (result & 0xFF) as u8;
-
-        // 残りの該当フラグを処理してレジスタに格納
-        self.nz_withSet(result, WriteAddr::A);
-        let state = &self.register.P;
-        state.set(State {
-            C: carry,
-            V: overflow,
-            ..state.get()
-        });
+        self.nvzc_withSet(pre_a, opeland, result, WriteAddr::A);
     }
 
     pub(crate) fn register_acc_op(&self, op: &OPCode, opeland: Opeland) {

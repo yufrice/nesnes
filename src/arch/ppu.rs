@@ -1,4 +1,3 @@
-use log::info;
 use std::cell::RefCell;
 use crate::arch::memory::PPURegister;
 use crate::arch::RcRefCell;
@@ -42,7 +41,7 @@ impl PPU {
             0 => (),
             // pre render line VBLANk
             261 => (),
-            _ => unreachable!(),
+            _ => (),
         }
 
         // 341クロックで1line描写
@@ -50,9 +49,6 @@ impl PPU {
             state.borrow_mut().Cycle -= 341;
             state.borrow_mut().Line += 1;
         }
-
-        info!("{:?}", state.borrow());
-
     }
 
     pub fn read(&self, adr: u8) -> &[u8] {

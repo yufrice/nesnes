@@ -18,7 +18,7 @@ impl CPU {
 
     pub(crate) fn stack_push(&self) {
         let pc = self.register.PC.get() as u8;
-        let count = (0x100 | self.register.SP.get() as u16) - 1;
+        let count = (0x100 | u16::from(self.register.SP.get())) - 1;
         self.memory.WRAM.borrow_mut()[count as usize] = pc;
         self.register.SP.set(count as u8);
 
@@ -128,7 +128,7 @@ impl CPU {
             | (OPCode::BVS, opeland) => self.branch_op(
                 &opcode.op,
                 match opeland {
-                    Opeland::Address(adr) => self.memory.read(adr as usize) as u16,
+                    Opeland::Address(adr) => u16::from(self.memory.read(adr as usize)),
                     _ => unreachable!(),
                 },
             ),
@@ -143,20 +143,20 @@ impl CPU {
             AddressingMode::Accumulator => Opeland::Accumulator,
             AddressingMode::ZeroPage => {
                 let addr = self.fetch();
-                Opeland::Address(addr as u16)
+                Opeland::Address(u16::from(addr))
             }
             AddressingMode::ZeroPageX => {
                 let addr = self.fetch();
                 let x = self.register.X.get();
-                Opeland::Address((addr + x) as u16)
+                Opeland::Address(u16::from(addr + x))
             }
             AddressingMode::ZeroPageY => {
                 let addr = self.fetch();
                 let y = self.register.Y.get();
-                Opeland::Address((addr + y) as u16)
+                Opeland::Address(u16::from(addr + y))
             }
             AddressingMode::Relative => {
-                let addr0 = self.fetch() as u16;
+                let addr0 = u16::from(self.fetch());
                 let pc = self.register.PC.get();
                 // 補数表現
                 let addr = if addr0 < 0x80 {
@@ -167,47 +167,47 @@ impl CPU {
                 Opeland::Address(addr as u16)
             }
             AddressingMode::Absolute => {
-                let addr_low = self.fetch() as u16;
-                let addr_high = (self.fetch() as u16).rotate_left(8);
+                let addr_low = u16::from(self.fetch());
+                let addr_high = u16::from(self.fetch()).rotate_left(8);
                 let addr = addr_high + addr_low;
                 Opeland::Address(addr as u16)
             }
             AddressingMode::AbsoluteX => {
-                let addr_low = self.fetch() as u16;
-                let addr_high = (self.fetch() as u16).rotate_left(8);
-                let x = self.register.X.get() as u16;
+                let addr_low = u16::from(self.fetch());
+                let addr_high = u16::from(self.fetch()).rotate_left(8);
+                let x = u16::from(self.register.X.get());
                 let addr = addr_high + addr_low + x;
                 Opeland::Address(addr as u16)
             }
             AddressingMode::AbsoluteY => {
-                let addr_low = self.fetch() as u16;
-                let addr_high = (self.fetch() as u16).rotate_left(8);
-                let y = self.register.Y.get() as u16;
+                let addr_low = u16::from(self.fetch());
+                let addr_high = u16::from(self.fetch()).rotate_left(8);
+                let y = u16::from(self.register.Y.get());
                 let addr = addr_high + addr_low + y;
                 Opeland::Address(addr as u16)
             }
             AddressingMode::Indirect => {
                 if let Opeland::Value(addr_low) = self.get_opeland(&AddressingMode::Absolute) {
-                    let addr_high = (addr_low as u16).rotate_left(8);
-                    let addr_low = (self.memory.read(addr_low as usize) as u16).rotate_left(8);
-                    let addr_high = self.memory.read(addr_high as usize) as u16;
+                    let addr_high = u16::from(addr_low).rotate_left(8);
+                    let addr_low = u16::from(self.memory.read(addr_low as usize)).rotate_left(8);
+                    let addr_high = u16::from(self.memory.read(addr_high as usize));
                     Opeland::Address((addr_high + addr_low) as u16)
                 } else {
                     unreachable!()
                 }
             }
             AddressingMode::IndirectX => {
-                let pre_addr = self.fetch() as u16;
-                let x = self.register.X.get() as u16;
+                let pre_addr = u16::from(self.fetch());
+                let x = u16::from(self.register.X.get());
                 let addr_low = pre_addr + x;
-                let addr_high = (self.fetch() as u16).rotate_left(8);
+                let addr_high = u16::from(self.fetch()).rotate_left(8);
                 Opeland::Address(addr_high + addr_low)
             }
             AddressingMode::IndirectY => {
-                let pre_addr = self.fetch() as u16;
-                let addr_high = (self.memory.read(pre_addr as usize) as u16).rotate_left(8);
-                let addr_low = self.memory.read(pre_addr as usize + 1usize) as u16;
-                let y = self.register.Y.get() as u16;
+                let pre_addr = u16::from(self.fetch());
+                let addr_high = u16::from(self.memory.read(pre_addr as usize)).rotate_left(8);
+                let addr_low = u16::from(self.memory.read(pre_addr as usize + 1usize));
+                let y = u16::from(self.register.Y.get());
                 Opeland::Address(addr_high + addr_low + y)
             }
             AddressingMode::Immediate => Opeland::Value(self.fetch()),

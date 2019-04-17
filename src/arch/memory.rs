@@ -54,10 +54,15 @@ impl CPUMemory {
                 0x2005 => unreachable!(),
                 0x2006 => unreachable!(),
                 0x2007 => {
-                    let counter = self.ppu_addr_inc();
+                    let counter = if 0 != (ppu_reg.PPUCTRL.get() & 0x02) {
+                        1
+                    } else {
+                        32
+                    };
                     let addr = ppu_reg.PPUADDR.get();
+                    let PPUMemory(ref vram) = ppu_reg.PPUDATA;
                     ppu_reg.PPUADDR.set(addr + counter);
-                    ppu_reg.PPUDATA.get()
+                    vram.borrow()[usize::from(addr)]
                 }
                 _ => unreachable!(),
             }
@@ -107,9 +112,14 @@ impl CPUMemory {
                 0x2005 => ppu_reg.PPUSCROLL.set(value),
                 0x2006 => ppu_reg.PPUADDR.set(value),
                 0x2007 => {
-                    ppu_reg.PPUDATA.set(value);
-                    //let counter = self.ppu_addr_inc();
-                    let counter = 0;
+                    let addr = ppu_reg.PPUADDR.get();
+                    let PPUMemory(ref vram) = ppu_reg.PPUDATA;
+                    vram.borrow_mut()[usize::from(addr)] = value;
+                    let counter = if 0 != (ppu_reg.PPUCTRL.get() & 0x02) {
+                        1
+                    } else {
+                        32
+                    };
                     let addr = ppu_reg.PPUADDR.get();
                     ppu_reg.PPUADDR.set(addr + counter);
                 }
@@ -125,16 +135,23 @@ impl CPUMemory {
             unimplemented!()
         }
     }
+}
 
-    pub(crate) fn ppu_addr_inc(&self) -> u8 {
-        let ppu_reg = self.IOP.borrow();
-        if 0 != (ppu_reg.PPUCTRL.get() & 0x02) {
-            1
-        } else {
-            32
-        }
+// VRAM E0117
+pub(crate) struct PPUMemory(pub(crate) RefCell<[u8; 0x10000]>);
+
+impl std::fmt::Debug for PPUMemory {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f, "VRAM")
     }
 }
+
+impl Default for PPUMemory {
+    fn default() -> Self {
+        Self(RefCell::new([0x00; 0x10000]))
+    }
+}
+
 
 /// PPU Register
 #[derive(Debug)]
@@ -176,12 +193,11 @@ pub(crate) struct PPURegister {
     /// しらん
     /// Write
     pub PPUSCROLL: Cell<u8>,
-    /// しらん
-    /// Write
+    /// Write VRAM Address
+    /// High/Low Address
     pub PPUADDR: Cell<u8>,
-    /// しらん
-    /// Read Write
-    pub PPUDATA: Cell<u8>,
+    /// Read Write VRAM
+    pub PPUDATA: PPUMemory,
 }
 
 impl Default for PPURegister {
@@ -194,7 +210,7 @@ impl Default for PPURegister {
             OAMDATA: Cell::new(0x00),
             PPUSCROLL: Cell::new(0x00),
             PPUADDR: Cell::new(0x00),
-            PPUDATA: Cell::new(0x00),
+            PPUDATA: PPUMemory::default(),
         }
     }
 }

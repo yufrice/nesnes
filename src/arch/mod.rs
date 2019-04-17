@@ -15,7 +15,7 @@ use register::Register;
 pub(crate) type RcRefCell<T> = Rc<RefCell<T>>;
 
 pub(crate) enum WriteAddr {
-    Memory(usize), A, X, Y, PC, SP, P,
+    Memory(usize), None, A, X, Y, PC, SP, P,
 }
 
 #[derive(Debug)]

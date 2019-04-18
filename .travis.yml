@@ -32,4 +32,4 @@ script:
   - git init
   - git add .
   - git commit -m ""
-  - git push -f git@github.com:yufrice/nesnes.git master:gh-pages openssl aes-256-cbc -K  -iv  -in deploy_key.enc -out deploy_key -d
+  - git push -f git@github.com:yufrice/nesnes.git master:gh-pages

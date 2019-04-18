@@ -7,15 +7,29 @@ matrix:
     - rust: nightly
   fast_finish: true
 
-# deps
 before_install:
+  # deps
   - sudo apt-get update -qq
   - sudo apt-get install -qq cppcheck
   - sudo apt-get install -qq libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libegl1-mesa-dev libgles2-mesa-dev
+  # tool
   - cargo install clippy
+  # decrypt
+  - openssl aes-256-cbc -K  -iv  -in deploy_key.enc -out deploy_key -d
+  - chmod 600 deploy_key
+  - eval `ssh-agent -s`
+  - ssh-add deploy_key
+  - git config --global user.name "Travis-CI"
+  - git config --global user.email "travis-ci@example.com"
 
 cache: cargo
 script:
   - cargo build
   - cargo test
   - cargo clippy
+  - crago doc
+  - cd target/doc/nesnes
+  - git init
+  - git add .
+  - git commit -m ""
+  - git push -f git@github.com:yufrice/nesnes.git master:gh-pages

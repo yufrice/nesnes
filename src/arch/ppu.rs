@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use log::info;
 
 use crate::arch::memory::{PPURegister, PPUMemory};
 use crate::arch::RcRefCell;
@@ -58,6 +59,12 @@ impl PPU {
 
     pub fn sprite_generate(&self) {
         let PPUMemory(ref vram) = self.IOC.borrow().PPUDATA;
+        info!("{}", self.State.borrow().Line);
+        let line = self.State.borrow().Line as usize / 8usize;
+        let range = line * 256 * 8 ..  (line + 1) * 256 * 8;
+        for line in range {
+            info!("{}: {:X}", line, vram.borrow()[line]);
+        }
     }
 }
 

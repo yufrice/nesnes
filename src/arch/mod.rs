@@ -1,21 +1,29 @@
 pub mod cpu;
-pub mod ppu;
-pub mod memory;
-pub mod register;
-pub mod op;
 
-use log::{info};
+pub mod memory;
+
+pub mod op;
+pub mod ppu;
+pub mod register;
+use log::info;
 use std::cell::RefCell;
 use std::rc::Rc;
 
 use memory::{CPUMemory, PPURegister};
-use {cpu::CPU, ppu::PPU};
-use register::Register;
 
+use register::Register;
+use {cpu::CPU, ppu::PPU};
 pub(crate) type RcRefCell<T> = Rc<RefCell<T>>;
 
 pub(crate) enum WriteAddr {
-    Memory(usize), None, A, X, Y, PC, SP, P,
+    Memory(usize),
+    None,
+    a,
+    x,
+    y,
+    pc,
+    sp,
+    p,
 }
 
 #[derive(Debug)]
@@ -49,10 +57,7 @@ impl Arch {
         info!("PPU init");
         let ppu = PPU::new(chr, ppu_reg);
         info!("Init done");
-        Arch {
-            cpu,
-            ppu,
-        }
+        Arch { cpu, ppu }
     }
 
     pub fn frame(&self) {
@@ -60,6 +65,6 @@ impl Arch {
         let opecode = op::Operation::new(addr);
         info!("{:?}", opecode);
         self.cpu.exec(&opecode);
-        self.ppu.run(3*opecode.cycle);
+        self.ppu.run(3 * opecode.cycle);
     }
 }

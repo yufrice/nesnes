@@ -17,7 +17,7 @@ before_install:
   - sudo apt-get install -qq libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libegl1-mesa-dev libgles2-mesa-dev
   # tool
   - rustup component add clippy
-  - if [[ "$TRAVIS_RUST_VERSION" == "nightly" ]];
+  - if [[ "$TRAVIS_RUST_VERSION" = "nightly" ]];
     then rustup component add clippy --toolchain=nightly || cargo install --git https://github.com/rust-lang/rust-clippy/ --force clippy;
     else rustup component add clippy;
     fi
@@ -39,4 +39,6 @@ script:
   - git init
   - git add .
   - git commit -m ""
-  - git push -f git@github.com:yufrice/nesnes.git master:gh-pages
+  - if [[ "$TRAVIS_RUST_VERSION" = "nightly" ]];
+    then git push -f git@github.com:yufrice/nesnes.git master:gh-pages;
+    fi

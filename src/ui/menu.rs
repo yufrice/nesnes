@@ -7,7 +7,7 @@ use sdl2::pixels::Color;
 pub(crate) fn generate_menu(canvas: &mut Canvas<Window>) {
     // side
     canvas.set_draw_color(Color::RGB(0x45, 0x5A, 0x64));
-    canvas.fill_rect(Rect::new(512, 0, 200, 480));
+    canvas.fill_rect(Rect::new(512, 0, 200, 480)).unwrap();
 
     // load font
     let ttf_context = sdl2::ttf::init().unwrap();
@@ -36,11 +36,10 @@ pub(crate) fn generate_menu(canvas: &mut Canvas<Window>) {
             .create_texture_from_surface(&surface)
             .unwrap();
 
-        let text_len = item.len() as u32;
         let TextureQuery { width, height, .. } = texture.query();
         canvas.copy(&texture, None, Rect::new(
             512 + PITCH, 360 + (idx as i32 * PITCH),
             width, height,
-        ));
+        )).unwrap();
     }
 }

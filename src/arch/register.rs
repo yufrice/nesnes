@@ -5,67 +5,67 @@ use std::cell::Cell;
 #[derive(Debug)]
 pub struct Register {
   /// Accumulator
-  pub(crate) A: Cell<u8>,
+  pub(crate) a: Cell<u8>,
   /// Indexes
-  pub(crate) X: Cell<u8>,
-  pub(crate) Y: Cell<u8>,
+  pub(crate) x: Cell<u8>,
+  pub(crate) y: Cell<u8>,
   /// Program Counter
-  pub(crate) PC: Cell<u16>,
+  pub(crate) pc: Cell<u16>,
   /// Stack Pointer
-  pub(crate) SP: Cell<u8>,
-  /// Statuc Register
-  pub(crate) P: Cell<State>,
+  pub(crate) sp: Cell<u8>,
+  /// Statuc register
+  pub(crate) p: Cell<State>,
 }
 
 impl Default for Register {
   fn default() -> Self {
     let state = State::default();
     Self {
-      A: Cell::new(0x00),
-      X: Cell::new(0x00),
-      Y: Cell::new(0x00),
-      PC: Cell::new(0x0000),
-      SP: Cell::new(0x00),
-      P: Cell::new(state),
+      a: Cell::new(0x00),
+      x: Cell::new(0x00),
+      y: Cell::new(0x00),
+      pc: Cell::new(0x0000),
+      sp: Cell::new(0x00),
+      p: Cell::new(state),
     }
   }
 }
 
 impl Register {
   pub(crate) fn pc_increment(&self) {
-    self.PC.set(1 + self.PC.get());
+    self.pc.set(1 + self.pc.get());
   }
 
   pub(crate) fn soft_reset(&self) {
-    self.P.set(
+    self.p.set(
       State::default()
     );
   }
 
   // interrupt signal
   pub(crate) fn nmi(&self) {
-    let state = &self.P;
+    let state = &self.p;
     state.set(State {
-      I: true,
-      B: false,
+      i: true,
+      b: false,
       ..state.get()
     })
   }
 
   pub(crate) fn hard_reset(&self) {
-    let state = &self.P;
+    let state = &self.p;
     state.set(State {
-      I: true,
+      i: true,
       ..state.get()
     })
   }
 
   pub(crate) fn irq(&self) {
-    let state = &self.P;
-    let brk = !state.get().B;
+    let state = &self.p;
+    let brk = !state.get().b;
     state.set(State {
-      I: true,
-      B: brk,
+      i: true,
+      b: brk,
       ..state.get()
     })
   }
@@ -73,25 +73,25 @@ impl Register {
 
 #[derive(Clone, Copy, Debug)]
 pub struct State {
-  pub(crate) N: bool,
-  pub(crate) V: bool,
+  pub(crate) n: bool,
+  pub(crate) v: bool,
   // R: (),
-  pub(crate) B: bool,
+  pub(crate) b: bool,
   // D,
-  pub(crate) I: bool,
-  pub(crate) Z: bool,
-  pub(crate) C: bool,
+  pub(crate) i: bool,
+  pub(crate) z: bool,
+  pub(crate) c: bool,
 }
 
 impl Default for State {
   fn default() -> Self {
     Self {
-      N: false,
-      V: false,
-      B: true,
-      I: true,
-      Z: false,
-      C: false,
+      n: false,
+      v: false,
+      b: true,
+      i: true,
+      z: false,
+      c: false,
     }
   }
 }

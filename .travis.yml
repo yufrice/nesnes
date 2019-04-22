@@ -22,7 +22,7 @@ before_install:
     else rustup component add clippy;
     fi
   # decrypt
-  - openssl aes-256-cbc -K $encrypted_36946889fc72_key -iv $encrypted_3694688
+  - openssl aes-256-cbc -K $encrypted_0e0e5642fd4a_key -iv $encrypted_0e0e5642fd4a_iv -in deploy_key.enc -out deploy_key -d
   - chmod 600 deploy_key
   - eval `ssh-agent -s`
   - ssh-add deploy_key

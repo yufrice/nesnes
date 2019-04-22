@@ -250,19 +250,19 @@ impl CPU {
         let zero = value == 0;
         // 補数で負
         let neg = (value & 0x80).rotate_right(0x80) != 0;
-        self.register.P.set(State {
-            N: neg,
-            V: false,
-            B: false,
-            I: false,
-            Z: zero,
-            C: false,
+        self.register.p.set(State {
+            n: neg,
+            v: false,
+            b: false,
+            i: false,
+            z: zero,
+            c: false,
         });
         match addr {
-            WriteAddr::A => self.register.A.set(value),
-            WriteAddr::X => self.register.X.set(value),
-            WriteAddr::Y => self.register.Y.set(value),
-            WriteAddr::SP => self.register.SP.set(value),
+            WriteAddr::A => self.register.a.set(value),
+            WriteAddr::X => self.register.x.set(value),
+            WriteAddr::Y => self.register.y.set(value),
+            WriteAddr::SP => self.register.sp.set(value),
             WriteAddr::Memory(addr) => self.memory.write(value, addr),
             WriteAddr::None => (),
             _ => unreachable!(),
@@ -277,9 +277,9 @@ impl CPU {
 
         // 残りの該当フラグを処理してレジスタに格納
         self.nz_withSet(result as u8, addr);
-        let state = &self.register.P;
+        let state = &self.register.p;
         state.set(State {
-            C: carry,
+            c: carry,
             ..state.get()
         });
     }
@@ -292,34 +292,34 @@ impl CPU {
 
         // 残りの該当フラグを処理してレジスタに格納
         self.nzc_withSet(result, addr);
-        let state = &self.register.P;
+        let state = &self.register.p;
         state.set(State {
-            V: overflow,
+            v: overflow,
             ..state.get()
         });
     }
 
     pub(crate) fn flag_op(&self, op: &OPCode) {
-        let state = &self.register.P;
+        let state = &self.register.p;
         match op {
             CLC => state.set(State {
-                C: false,
+                c: false,
                 ..state.get()
             }),
             SEC => state.set(State {
-                C: true,
+                c: true,
                 ..state.get()
             }),
             CLI => state.set(State {
-                I: false,
+                i: false,
                 ..state.get()
             }),
             SEI => state.set(State {
-                I: true,
+                i: true,
                 ..state.get()
             }),
             CLV => state.set(State {
-                V: false,
+                v: false,
                 ..state.get()
             }),
             // Disable
@@ -330,18 +330,18 @@ impl CPU {
 
     pub(crate) fn logic_op(&self, op: &OPCode, opeland: u8) {
         match op {
-            AND => self.nz_withSet(self.register.A.get() & opeland, WriteAddr::A),
-            ORA => self.nz_withSet(self.register.A.get() | opeland, WriteAddr::A),
-            EOR => self.nz_withSet(self.register.A.get() ^ opeland, WriteAddr::A),
+            AND => self.nz_withSet(self.register.a.get() & opeland, WriteAddr::A),
+            ORA => self.nz_withSet(self.register.a.get() | opeland, WriteAddr::A),
+            EOR => self.nz_withSet(self.register.a.get() ^ opeland, WriteAddr::A),
             _ => unreachable!(),
         }
     }
 
     pub(crate) fn compare_op(&self, op: &OPCode, opeland: u8) {
         let lhs = match op {
-            CMP => self.register.A.get(),
-            CPX => self.register.X.get(),
-            CPY => self.register.Y.get(),
+            CMP => self.register.a.get(),
+            CPX => self.register.x.get(),
+            CPY => self.register.y.get(),
             _ => unreachable!(),
         };
 
@@ -351,11 +351,11 @@ impl CPU {
     }
 
     pub(crate) fn acc_op(&self, op: &OPCode, opeland: u8) {
-        let pre_a = u16::from(self.register.A.get());
+        let pre_a = u16::from(self.register.a.get());
         let opeland = u16::from(opeland);
         let result = match op {
-            ADC => pre_a + opeland + (self.register.P.get().C as u16),
-            SBC => pre_a - opeland + (self.register.P.get().C as u16),
+            ADC => pre_a + opeland + (self.register.p.get().c as u16),
+            SBC => pre_a - opeland + (self.register.p.get().c as u16),
             ASL => unimplemented!(),
             LSR => unimplemented!(),
             ROL => unimplemented!(),
@@ -370,9 +370,9 @@ impl CPU {
         let value = match opeland {
             Opeland::Value(value) => value,
             Opeland::Address(adr) => self.memory.read(adr as usize),
-            Opeland::None if op == &OPCode::INX => self.register.X.get(),
-            Opeland::None if op == &OPCode::INY => self.register.Y.get(),
-            Opeland::None if op == &OPCode::DEY => self.register.Y.get(),
+            Opeland::None if op == &OPCode::INX => self.register.x.get(),
+            Opeland::None if op == &OPCode::INY => self.register.y.get(),
+            Opeland::None if op == &OPCode::DEY => self.register.y.get(),
             _ => unreachable!(),
         };
 
@@ -395,7 +395,7 @@ impl CPU {
         match op {
             JMP => {
                 let addr = opeland - 0x8000;
-                self.register.PC.set(addr)
+                self.register.pc.set(addr)
             }
             JSR => {
                 self.stack_push();
@@ -423,12 +423,12 @@ impl CPU {
 
     pub(crate) fn copy_op(&self, op: &OPCode) {
         match op {
-            TAX => self.nz_withSet(self.register.A.get(), WriteAddr::X),
-            TAY => self.nz_withSet(self.register.A.get(), WriteAddr::Y),
-            TSX => self.nz_withSet(self.register.SP.get(), WriteAddr::X),
-            TXA => self.nz_withSet(self.register.X.get(), WriteAddr::A),
-            TXS => self.nz_withSet(self.register.X.get(), WriteAddr::SP),
-            TYA => self.nz_withSet(self.register.Y.get(), WriteAddr::A),
+            TAX => self.nz_withSet(self.register.a.get(), WriteAddr::X),
+            TAY => self.nz_withSet(self.register.a.get(), WriteAddr::Y),
+            TSX => self.nz_withSet(self.register.sp.get(), WriteAddr::X),
+            TXA => self.nz_withSet(self.register.x.get(), WriteAddr::A),
+            TXS => self.nz_withSet(self.register.x.get(), WriteAddr::SP),
+            TYA => self.nz_withSet(self.register.y.get(), WriteAddr::A),
             _ => unreachable!(),
         }
     }
@@ -436,23 +436,23 @@ impl CPU {
     pub(crate) fn store_op(&self, op: &OPCode, opeland: usize) {
         self.register.soft_reset();
         match op {
-            STA => self.memory.write(self.register.A.get(), opeland),
-            STX => self.memory.write(self.register.X.get(), opeland),
-            STY => self.memory.write(self.register.Y.get(), opeland),
+            STA => self.memory.write(self.register.a.get(), opeland),
+            STX => self.memory.write(self.register.x.get(), opeland),
+            STY => self.memory.write(self.register.y.get(), opeland),
             _ => unreachable!(),
         };
     }
 
     pub(crate) fn branch_op(&self, op: &OPCode, opeland: u16) {
         match op {
-            BCC if !self.register.P.get().C => self.register.PC.set(opeland),
-            BCS if self.register.P.get().C => self.register.PC.set(opeland),
-            BEQ if self.register.P.get().Z => self.register.PC.set(opeland),
-            BNE if !self.register.P.get().Z => self.register.PC.set(opeland),
-            BVC if !self.register.P.get().V => self.register.PC.set(opeland),
-            BVS if !self.register.P.get().V => self.register.PC.set(opeland),
-            BPL if !self.register.P.get().N => self.register.PC.set(opeland),
-            BMI if self.register.P.get().N => self.register.PC.set(opeland),
+            BCC if !self.register.p.get().c => self.register.pc.set(opeland),
+            BCS if self.register.p.get().c => self.register.pc.set(opeland),
+            BEQ if self.register.p.get().z => self.register.pc.set(opeland),
+            BNE if !self.register.p.get().z => self.register.pc.set(opeland),
+            BVC if !self.register.p.get().v => self.register.pc.set(opeland),
+            BVS if !self.register.p.get().v => self.register.pc.set(opeland),
+            BPL if !self.register.p.get().n => self.register.pc.set(opeland),
+            BMI if self.register.p.get().n => self.register.pc.set(opeland),
             _ => (),
         };
         self.register.soft_reset();

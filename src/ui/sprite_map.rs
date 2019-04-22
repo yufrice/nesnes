@@ -22,7 +22,7 @@ pub(crate) fn generate_sprites(
         .create_texture_streaming(PixelFormatEnum::RGB24, TEXTURE_WIDTH, TEXTURE_HEIGHT)
         .unwrap();
     texture
-        .with_lock(None, |buffer: &mut [u8], pitch: usize| {
+        .with_lock(None, |buffer: &mut [u8], _: usize| {
             for (sprite_idx, sprite) in chr.iter().enumerate() {
                 for (idx, pixel) in sprite.iter().enumerate() {
                     let sprite_next = |idx, sprite_idx| -> usize {

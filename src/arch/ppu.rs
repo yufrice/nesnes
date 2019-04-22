@@ -1,30 +1,63 @@
-use std::cell::RefCell;
-use log::info;
-
-use crate::arch::memory::{PPURegister, PPUMemory};
+use crate::arch::memory::{PPUMemory, PPURegister};
 use crate::arch::RcRefCell;
+use log::info;
+use std::cell::RefCell;
+
+/// Sprite(0x40) x 0x200
+pub type Pattern = [[u8; 0x40]; 0x200];
 
 pub(crate) struct PPU {
     /// CHR
-    pub(crate) Pattern: Vec<u8>,
-    pub(crate) State: RefCell<PPUState>,
+    pub(crate) pattern0: Pattern,
+    pub(crate) state: RefCell<PPUState>,
+    pub(crate) display: Display,
     pub(crate) IOC: RcRefCell<PPURegister>,
 }
 
+// 実機はプールしないでレンダリングしてる
+// 多分render実装したら消える
+pub(crate) struct Display {
+    pub(crate) sprite: RefCell<[u8; 0x3C0]>,
+    pub(crate) attribute: RefCell<[u8; 240]>,
+}
+
+impl Default for Display {
+    fn default() -> Self {
+        Self {
+            sprite: RefCell::new([0x00; 0x3C0]),
+            attribute: RefCell::new([0x00; 240]),
+        }
+    }
+}
 
 impl PPU {
     pub fn new(chr: Vec<u8>, ioc: RcRefCell<PPURegister>) -> PPU {
+        fn parse_sprite(buffer: &mut [[u8; 0x40]; 0x200], chr: Vec<u8>) {
+            for (sprite_idx, sprite) in chr.chunks(16).enumerate() {
+                let (pixel0, pixel1) = sprite.split_at(8);
+                for (idx, (pix0, pix1)) in pixel0.iter().zip(pixel1).enumerate() {
+                    // 上位ビットから値を算出
+                    for x in (0..8).rev() {
+                        let b = ((pix0 & 2u8.pow(x)) >> x) + 2 * ((pix1 & 2u8.pow(x)) >> x);
+                        buffer[sprite_idx][8 * idx + (7 - x) as usize] = b;
+                    }
+                }
+            }
+        }
         let state = PPUState::default();
+        let buffer = &mut [[0u8; 0x40]; 0x200];
+        parse_sprite(buffer, chr);
         PPU {
-            Pattern: chr,
-            State: RefCell::new(state),
+            pattern0: *buffer,
+            state: RefCell::new(state),
+            display: Display::default(),
             /// I/O CPU Register
             IOC: ioc,
         }
     }
 
     pub fn run(&self, cycle: u32) {
-        let state = &self.State;
+        let state = &self.state;
         let line = state.borrow().Line;
         state.borrow_mut().Cycle += cycle;
         match line {
@@ -47,23 +80,25 @@ impl PPU {
     pub fn read(&self, adr: u8) -> &[u8] {
         let adr = adr as usize;
         if adr < 0x2000usize {
-            &self.Pattern[adr..(adr + 0xFusize)]
+            //&self.pattern[adr..(adr + 0xFusize)]
+            unimplemented!()
         } else {
             unimplemented!()
         }
     }
 
-    pub fn sprite_flush(&self) -> &Vec<u8> {
-        &self.Pattern
+    pub fn sprite_flush(&self) -> Pattern {
+        self.pattern0
     }
 
+    // generateじゃなくてrender的になるはず
     pub fn sprite_generate(&self) {
         let PPUMemory(ref vram) = self.IOC.borrow().PPUDATA;
-        info!("{}", self.State.borrow().Line);
-        let line = self.State.borrow().Line as usize / 8usize;
-        let range = line * 256 * 8 ..  (line + 1) * 256 * 8;
+        info!("{}", self.state.borrow().Line);
+        let line = self.state.borrow().Line as usize / 8usize;
+        let range = line * 8..(line + 1) * 8;
         for line in range {
-            info!("{}: {:X}", line, vram.borrow()[line]);
+            self.display.sprite.borrow_mut()[line] = vram.borrow()[line];
         }
     }
 }

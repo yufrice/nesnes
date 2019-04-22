@@ -1,5 +1,8 @@
 language: rust
 rust:
+  - 1.36.0
+  - stable
+  - beta
   - nightly
 
 matrix:
@@ -14,6 +17,11 @@ before_install:
   - sudo apt-get install -qq libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libegl1-mesa-dev libgles2-mesa-dev
   # tool
   - rustup component add clippy
+  - bash -c 'if [[ "$TRAVIS_RUST_VERSION" == "nightly" ]]; then
+      rustup component add clippy --toolchain=nightly || cargo install --git https://github.com/rust-lang/rust-clippy/ --force clippy;
+    else
+      rustup component add clippy;
+    fi'
   # decrypt
   - openssl aes-256-cbc -K $encrypted_36946889fc72_key -iv $encrypted_3694688
   - chmod 600 deploy_key

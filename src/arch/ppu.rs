@@ -11,7 +11,7 @@ pub(crate) struct PPU {
     pub(crate) pattern0: Pattern,
     pub(crate) state: RefCell<PPUState>,
     pub(crate) display: Display,
-    pub(crate) IOC: RcRefCell<PPURegister>,
+    pub(crate) ioc: RcRefCell<PPURegister>,
 }
 
 // 実機はプールしないでレンダリングしてる
@@ -52,14 +52,14 @@ impl PPU {
             state: RefCell::new(state),
             display: Display::default(),
             /// I/O CPU Register
-            IOC: ioc,
+            ioc,
         }
     }
 
     pub fn run(&self, cycle: u32) {
         let state = &self.state;
-        let line = state.borrow().Line;
-        state.borrow_mut().Cycle += cycle;
+        let line = state.borrow().line;
+        state.borrow_mut().cycle += cycle;
         match line {
             // background
             // sprites generate
@@ -71,9 +71,9 @@ impl PPU {
         }
 
         // 341クロックで1line描写
-        if state.borrow().Cycle >= 341 {
-            state.borrow_mut().Cycle -= 341;
-            state.borrow_mut().Line += 1;
+        if state.borrow().cycle >= 341 {
+            state.borrow_mut().cycle -= 341;
+            state.borrow_mut().line += 1;
         }
     }
 
@@ -93,9 +93,9 @@ impl PPU {
 
     // generateじゃなくてrender的になるはず
     pub fn sprite_generate(&self) {
-        let PPUMemory(ref vram) = self.IOC.borrow().PPUDATA;
-        info!("{}", self.state.borrow().Line);
-        let line = self.state.borrow().Line as usize / 8usize;
+        let PPUMemory(ref vram) = self.ioc.borrow().ppudata;
+        info!("{}", self.state.borrow().line);
+        let line = self.state.borrow().line as usize / 8usize;
         let range = line * 8..(line + 1) * 8;
         for line in range {
             self.display.sprite.borrow_mut()[line] = vram.borrow()[line];
@@ -105,12 +105,12 @@ impl PPU {
 
 #[derive(Debug)]
 pub(crate) struct PPUState {
-    Cycle: u32,
-    Line: u32,
+    cycle: u32,
+    line: u32,
 }
 
 impl Default for PPUState {
     fn default() -> Self {
-        Self { Cycle: 0, Line: 0 }
+        Self { cycle: 0, line: 0 }
     }
 }

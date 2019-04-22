@@ -14,29 +14,23 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq cppcheck
   - sudo apt-get install -qq libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libegl1-mesa-dev libgles2-mesa-dev
+
   # tool
   - if [[ "$TRAVIS_RUST_VERSION" = "nightly" ]];
     then rustup component add clippy --toolchain=nightly || cargo install --git https://github.com/rust-lang/rust-clippy/ --force clippy;
     else rustup component add clippy;
     fi
-  # decrypt
-  - openssl aes-256-cbc -K $encrypted_0e0e5642fd4a_key -iv $encrypted_0e0e5642fd4a_iv -in deploy_key.enc -out deploy_key -d
-  - chmod 600 deploy_key
-  - eval `ssh-agent -s`
-  - ssh-add deploy_key
-  - git config --global user.name "Travis-CI"
-  - git config --global user.email "travis-ci@example.com"
+  - |
+    pip install 'travis-cargo<0.2' --user &&
+    export PATH=$HOME/.local/bin:$PATH
 
 cache: cargo
 script:
-  - cargo build
-  - cargo test
+  -|
+  travis-cargo build &&
+  travis-cargo test &&
+  travis-cargo --only nightly doc
   - cargo clippy
-  - crago doc
-  - cd target/doc/nesnes
-  - git init
-  - git add .
-  - git commit -m ""
-  - if [[ "$TRAVIS_RUST_VERSION" = "nightly" ]];
-    then git push -f git@github.com:yufrice/nesnes.git master:gh-pages;
-    fi
+
+after_success:
+  - travis-cargo --only nightly doc-upload

@@ -1,6 +1,5 @@
 language: rust
 rust:
-  - 1.36.0
   - stable
   - beta
   - nightly
@@ -16,7 +15,6 @@ before_install:
   - sudo apt-get install -qq cppcheck
   - sudo apt-get install -qq libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev libegl1-mesa-dev libgles2-mesa-dev
   # tool
-  - rustup component add clippy
   - if [[ "$TRAVIS_RUST_VERSION" = "nightly" ]];
     then rustup component add clippy --toolchain=nightly || cargo install --git https://github.com/rust-lang/rust-clippy/ --force clippy;
     else rustup component add clippy;

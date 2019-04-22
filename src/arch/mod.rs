@@ -15,12 +15,12 @@ use register::Register;
 pub(crate) type RcRefCell<T> = Rc<RefCell<T>>;
 
 pub(crate) enum WriteAddr {
-    Memory(usize), A, X, Y, PC, SP, P,
+    Memory(usize), None, A, X, Y, PC, SP, P,
 }
 
 #[derive(Debug)]
 pub(crate) enum Opeland {
-    Address(u32),
+    Address(u16),
     Value(u8),
     Accumulator,
     None,
@@ -43,21 +43,22 @@ impl Arch {
         info!("CPU init");
         let cpu = CPU {
             register: cpu_reg,
-            memory: memory,
+            memory,
         };
 
         info!("PPU init");
         let ppu = PPU::new(chr, ppu_reg);
         info!("Init done");
         Arch {
-            cpu: cpu,
-            ppu: ppu,
+            cpu,
+            ppu,
         }
     }
 
     pub fn frame(&self) {
         let addr = self.cpu.fetch();
         let opecode = op::Operation::new(addr);
+        info!("{:?}", opecode);
         self.cpu.exec(&opecode);
         self.ppu.run(3*opecode.cycle);
     }

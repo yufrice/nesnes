@@ -1,23 +1,21 @@
-use std::io::{BufReader, Read};
-use std::{fs};
+use std::fs;
+use std::io::BufReader;
+use std::io::prelude::Read;
 
 use crate::arch;
 use arch::Arch;
 
-pub fn parser<'a>(path: &'a str) -> Result<Arch, String> {
-    let mut f = fs::File::open(path).map_err(|v| format!("{}", v))?;
+pub fn parser(path: &str) -> Result<Arch, String> {
+    let f = fs::File::open(path).map_err(|v| format!("{}", v))?;
     let mut reader = BufReader::new(f).bytes();
 
     // header verify
     static VERIFY: &'static [u8; 4] = &[0x4E, 0x45, 0x53, 0x1A];
     for (b, v) in reader.by_ref().take(4).zip(VERIFY) {
-        match b {
-            Ok(ref b) => {
-                if b != v {
-                    return Err("err".to_string());
-                }
+        if let Ok(ref b) = b {
+            if b != v {
+                return Err("err".to_string());
             }
-            _ => (),
         }
     }
 

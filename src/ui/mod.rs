@@ -24,7 +24,7 @@ pub fn run(arch: Arch) {
     let mut canvas = window.into_canvas().build().unwrap();
 
     let texture_creator = canvas.texture_creator();
-    let texture = sprite_map::generate_sprite(texture_creator, character);
+    let texture = sprite_map::generate_sprites(texture_creator, character);
     let TextureQuery { width, height, .. } = texture.query();
 
 
@@ -33,9 +33,10 @@ pub fn run(arch: Arch) {
 
     menu::generate_menu(&mut canvas);
     canvas.copy(
-        &texture, None,
+        &texture,
+        None,
         Rect::new(550, 10, width, height),
-    );
+    ).unwrap();
     canvas.present();
 
     let mut event_pump = sdl_context.event_pump().unwrap();

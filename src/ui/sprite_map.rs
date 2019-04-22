@@ -1,9 +1,14 @@
-use sdl2::render::{Texture,TextureCreator};
-use sdl2::video::WindowContext;
 use sdl2::pixels::PixelFormatEnum;
+use sdl2::render::{Texture, TextureCreator};
+use sdl2::video::WindowContext;
 
-pub(crate) fn generate_sprite(texture_creator: TextureCreator<WindowContext>, chr: &Vec<u8>)
-    -> Texture {
+
+use crate::arch::ppu::Pattern;
+
+pub(crate) fn generate_sprites(
+    texture_creator: TextureCreator<WindowContext>,
+    chr: Pattern,
+) -> Texture {
     let col: [[u8; 3]; 4] = [
         [0x00u8, 0x00u8, 0x00u8],
         [0xCFu8, 0x29u8, 0x50u8],
@@ -18,26 +23,32 @@ pub(crate) fn generate_sprite(texture_creator: TextureCreator<WindowContext>, ch
         .unwrap();
     texture
         .with_lock(None, |buffer: &mut [u8], pitch: usize| {
-            for (sprite_idx, sprite) in chr.chunks(16).enumerate() {
-                let (pixel0, pixel1) = sprite.split_at(8);
-                for (idx, (pix0, pix1)) in pixel0.iter().zip(pixel1).enumerate() {
-                    for x in (0..8).rev() {
-                        // N^3 -> N^1
-                        fn sprite_next(idx: usize) -> usize {
-                            const SPRITE_NEXT: usize = (128 * 3 * 8) as usize;
-                            let idx_mod = idx % 15;
-                            let sprite_x_idx = (idx - idx_mod) / 15;
-                            idx_mod * 24 + sprite_x_idx * SPRITE_NEXT
-                        }
-
-                        let b = (((pix0 & 2u8.pow(x)) >> x) + ((pix1 & 2u8.pow(x)) >> x)) as usize;
-                        let offset = sprite_next(sprite_idx) + pitch * idx + 3 * (7 - x) as usize;
-                        buffer[offset] = col[b][0];
-                        buffer[offset + 1] = col[b][1];
-                        buffer[offset + 2] = col[b][2];
-                    }
+            for (sprite_idx, sprite) in chr.iter().enumerate() {
+                for (idx, pixel) in sprite.iter().enumerate() {
+                    let sprite_next = |idx, sprite_idx| -> usize {
+                        let sprite_x_idx = sprite_idx % 16;
+                        let sprite_y_idx = sprite_idx / 16;
+                        let pixel_x_idx = idx % 8;
+                        let pixel_y_idx = idx / 8;
+                        sprite_x_idx * 3 * 8
+                            + sprite_y_idx * 128 * 8 * 3
+                            + pixel_x_idx * 3
+                            + pixel_y_idx * 128 * 3
+                    };
+                    let offset = sprite_next(idx, sprite_idx);
+                    let pixel = *pixel as usize;
+                    buffer[offset] = col[pixel][0];
+                    buffer[offset + 1] = col[pixel][1];
+                    buffer[offset + 3] = col[pixel][2];
                 }
             }
-        });
-        texture
+        })
+        .unwrap();
+    texture
+}
+
+pub(crate) fn position_map(idx: i32) -> (i32, i32) {
+    let x_idx = idx % 16 * 8;
+    let y_idx = (idx - (idx % 16)) / 16 * 8;
+    (x_idx, y_idx)
 }

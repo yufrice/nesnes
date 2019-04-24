@@ -32,11 +32,11 @@ script:
   - cargo build
   - cargo test
   - cargo clippy
-  - crago doc
+  - cargo doc
   - cd target/doc/nesnes
   - git init
   - git add .
-  - git commit -m ""
+  - git commit -m "Deploy to doc"
   - if [[ "$TRAVIS_RUST_VERSION" = "nightly" ]];
     then git push -f git@github.com:yufrice/nesnes.git master:gh-pages;
     fi

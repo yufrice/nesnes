@@ -1,16 +1,18 @@
-pub mod sprite_map;
 pub mod menu;
+pub mod sprite_map;
 
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-use sdl2::pixels::{Color};
+use sdl2::pixels::Color;
 use sdl2::rect::Rect;
-use std::time::Duration;
+
 use sdl2::render::TextureQuery;
+use std::time::Duration;
+use crate::parser;
 
-use crate::arch::Arch;
+pub fn run() {
+    let arch = parser::parser("test0.nes").unwrap();
 
-pub fn run(arch: Arch) {
     let character = arch.ppu.sprite_flush();
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
@@ -32,11 +34,9 @@ pub fn run(arch: Arch) {
     canvas.clear();
 
     menu::generate_menu(&mut canvas);
-    canvas.copy(
-        &texture,
-        None,
-        Rect::new(550, 10, width, height),
-    ).unwrap();
+    canvas
+        .copy(&texture, None, Rect::new(550, 10, width, height))
+        .unwrap();
     canvas.present();
 
     let mut event_pump = sdl_context.event_pump().unwrap();
@@ -53,6 +53,7 @@ pub fn run(arch: Arch) {
                 _ => {}
             }
         }
+
         arch.frame();
 
         canvas.present();

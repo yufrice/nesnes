@@ -10,6 +10,8 @@ pub fn parser(path: &str) -> Result<Arch, String> {
     let mut reader = BufReader::new(f).bytes();
 
     // header verify
+    // ToDo skipしてるデータはフラグ初期化あたりで使うはずなので
+    // どうにかする
     static VERIFY: &'static [u8; 4] = &[0x4E, 0x45, 0x53, 0x1A];
     for (b, v) in reader.by_ref().take(4).zip(VERIFY) {
         if let Ok(ref b) = b {

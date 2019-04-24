@@ -1,13 +1,14 @@
 pub mod cpu;
-
 pub mod memory;
-
 pub mod op;
 pub mod ppu;
 pub mod register;
+
 use log::info;
 use std::cell::RefCell;
 use std::rc::Rc;
+use sdl2::render::Canvas;
+use sdl2::video::Window;
 
 use memory::{CPUMemory, PPURegister};
 
@@ -40,7 +41,7 @@ pub struct Arch {
 }
 
 impl Arch {
-    pub fn new(rom: Vec<u8>, chr: Vec<u8>) -> Arch {
+    pub fn new(rom: Vec<u8>, chr: Vec<u8>,canvas: RcRefCell<Canvas<Window>>) -> Arch {
         info!("PPU Register init");
         let ppu_reg = Rc::new(RefCell::new(PPURegister::default()));
         info!("CPU Register init");
@@ -55,7 +56,7 @@ impl Arch {
         };
 
         info!("PPU init");
-        let ppu = PPU::new(chr, ppu_reg);
+        let ppu = PPU::new(chr, ppu_reg, canvas);
         info!("Init done");
         Arch { cpu, ppu }
     }

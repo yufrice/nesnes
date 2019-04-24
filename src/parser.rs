@@ -2,10 +2,7 @@ use std::fs;
 use std::io::BufReader;
 use std::io::prelude::Read;
 
-use crate::arch;
-use arch::Arch;
-
-pub fn parser(path: &str) -> Result<Arch, String> {
+pub fn parser(path: &str) -> Result<(Vec<u8>, Vec<u8>), String> {
     let f = fs::File::open(path).map_err(|v| format!("{}", v))?;
     let mut reader = BufReader::new(f).bytes();
 
@@ -44,5 +41,5 @@ pub fn parser(path: &str) -> Result<Arch, String> {
         .collect::<Result<Vec<u8>, _>>()
         .map_err(|err| err.to_string())?;
 
-    Ok(Arch::new(prg, chr))
+    Ok((prg, chr))
 }

@@ -7,13 +7,13 @@ use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::render::TextureQuery;
 use std::time::Duration;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 use crate::parser;
+use crate::arch::Arch;
 
 pub fn run() {
-    let arch = parser::parser("test0.nes").unwrap();
-
-    let character = arch.ppu.sprite_flush();
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
@@ -23,21 +23,29 @@ pub fn run() {
         .build()
         .unwrap();
 
-    let mut canvas = window.into_canvas().build().unwrap();
+    let canvas =
+    Rc::new(RefCell::new(window.into_canvas().build().unwrap()));
 
-    let texture_creator = canvas.texture_creator();
+    // nes側
+    let (prg, chr) = parser::parser("test.nes").unwrap();
+    let arch = Arch::new(prg, chr, canvas.clone());
+    let character = arch.ppu.sprite_flush();
+
+    let texture_creator = canvas.borrow().texture_creator();
     let texture = sprite_map::generate_sprites(texture_creator, character);
     let TextureQuery { width, height, .. } = texture.query();
 
 
-    canvas.set_draw_color(Color::RGB(0xC4, 0xC4, 0xC4));
-    canvas.clear();
 
-    menu::generate_menu(&mut canvas);
+    canvas.borrow_mut().set_draw_color(Color::RGB(0xC4, 0xC4, 0xC4));
+    canvas.borrow_mut().clear();
+
+    menu::generate_menu(&mut canvas.borrow_mut());
     canvas
+        .borrow_mut()
         .copy(&texture, None, Rect::new(550, 10, width, height))
         .unwrap();
-    canvas.present();
+    canvas.borrow_mut().present();
 
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut i = 0;
@@ -56,7 +64,7 @@ pub fn run() {
 
         arch.frame();
 
-        canvas.present();
+        canvas.borrow_mut().present();
         ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }
 }

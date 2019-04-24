@@ -1,7 +1,10 @@
+use log::info;
+use sdl2::render::Canvas;
+use sdl2::video::Window;
+use std::cell::RefCell;
+
 use crate::arch::memory::{PPUMemory, PPURegister};
 use crate::arch::RcRefCell;
-use log::info;
-use std::cell::RefCell;
 
 /// Sprite(0x40) x 0x200
 pub type Pattern = [[u8; 0x40]; 0x200];
@@ -12,6 +15,7 @@ pub(crate) struct PPU {
     pub(crate) state: RefCell<PPUState>,
     pub(crate) display: Display,
     pub(crate) ioc: RcRefCell<PPURegister>,
+    pub(crate) canvas: RcRefCell<Canvas<Window>>,
 }
 
 // 実機はプールしないでレンダリングしてる
@@ -31,7 +35,11 @@ impl Default for Display {
 }
 
 impl PPU {
-    pub fn new(chr: Vec<u8>, ioc: RcRefCell<PPURegister>) -> PPU {
+    pub fn new(
+        chr: Vec<u8>,
+        ioc: RcRefCell<PPURegister>,
+        canvas: RcRefCell<Canvas<Window>>,
+    ) -> PPU {
         fn parse_sprite(buffer: &mut [[u8; 0x40]; 0x200], chr: Vec<u8>) {
             for (sprite_idx, sprite) in chr.chunks(16).enumerate() {
                 let (pixel0, pixel1) = sprite.split_at(8);
@@ -53,6 +61,7 @@ impl PPU {
             display: Display::default(),
             /// I/O CPU Register
             ioc,
+            canvas,
         }
     }
 
@@ -68,7 +77,7 @@ impl PPU {
             // pre render line VBLANk
             240...261 => (),
             _ => (),
-        }
+        };
 
         // 341クロックで1line描写
         if state.borrow().cycle >= 341 {
@@ -77,12 +86,9 @@ impl PPU {
         }
     }
 
-    pub fn read(&self, adr: u8) -> &[u8] {
+    pub fn read(&self, adr: u8) {
         let adr = adr as usize;
         if adr < 0x2000usize {
-            //&self.pattern[adr..(adr + 0xFusize)]
-            unimplemented!()
-        } else {
             unimplemented!()
         }
     }

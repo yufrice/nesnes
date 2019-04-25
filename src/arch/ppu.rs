@@ -1,7 +1,9 @@
 use log::info;
+use sdl2::pixels::PixelFormatEnum;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
 use std::cell::RefCell;
+
 
 use crate::arch::memory::{PPUMemory, PPURegister};
 use crate::arch::RcRefCell;
@@ -98,14 +100,23 @@ impl PPU {
     }
 
     // generateじゃなくてrender的になるはず
-    pub fn sprite_generate(&self) {
+    pub(crate) fn sprite_generate(&self) {
+        let texture_creator = self.canvas.borrow().texture_creator();
+        let mut texture = texture_creator
+            .create_texture_streaming(PixelFormatEnum::RGB24, 8 * 8 * 8, 8 * 8)
+            .unwrap();
+
         let PPUMemory(ref vram) = self.ioc.borrow().ppudata;
         info!("{}", self.state.borrow().line);
         let line = self.state.borrow().line as usize / 8usize;
         let range = line * 8..(line + 1) * 8;
         for line in range {
-            self.display.sprite.borrow_mut()[line] = vram.borrow()[line];
+            for idx in 0..8 {
+                let (x, y) = position_map((line * 8 + idx) as i32);
+            }
+            //self.display.sprite.borrow_mut()[line] = vram.borrow()[line];
         }
+        panic!();
     }
 }
 
@@ -119,4 +130,11 @@ impl Default for PPUState {
     fn default() -> Self {
         Self { cycle: 0, line: 0 }
     }
+}
+
+
+pub fn position_map(idx: i32) -> (i32, i32) {
+    let x_idx = idx % 16 * 8;
+    let y_idx = (idx - (idx % 16)) / 16 * 8;
+    (x_idx, y_idx)
 }

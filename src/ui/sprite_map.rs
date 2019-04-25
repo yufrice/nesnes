@@ -46,9 +46,3 @@ pub(crate) fn generate_sprites(
         .unwrap();
     texture
 }
-
-pub(crate) fn position_map(idx: i32) -> (i32, i32) {
-    let x_idx = idx % 16 * 8;
-    let y_idx = (idx - (idx % 16)) / 16 * 8;
-    (x_idx, y_idx)
-}

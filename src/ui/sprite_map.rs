@@ -30,10 +30,11 @@ pub(crate) fn generate_sprites(
                         let sprite_y_idx = sprite_idx / 16;
                         let pixel_x_idx = idx % 8;
                         let pixel_y_idx = idx / 8;
-                        sprite_x_idx * 3 * 8
-                            + sprite_y_idx * 128 * 8 * 3
-                            + pixel_x_idx * 3
-                            + pixel_y_idx * 128 * 3
+                        (sprite_x_idx * 8
+                            + sprite_y_idx * 128 * 8
+                            + pixel_x_idx
+                            + pixel_y_idx * 128)
+                            * 3
                     };
                     let offset = sprite_next(idx, sprite_idx);
                     let pixel = *pixel as usize;

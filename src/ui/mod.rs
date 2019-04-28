@@ -48,10 +48,8 @@ pub fn run() {
     canvas.borrow_mut().present();
 
     let mut event_pump = sdl_context.event_pump().unwrap();
-    let mut i = 0;
     'running: loop {
-        i = (i + 1) % 255;
-        for event in event_pump.poll_iter() {
+        for event in event_pump.poll_event() {
             match event {
                 Event::Quit { .. }
                 | Event::KeyDown {
@@ -65,6 +63,5 @@ pub fn run() {
         arch.frame();
 
         canvas.borrow_mut().present();
-        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }
 }

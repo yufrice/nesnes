@@ -1,8 +1,7 @@
+use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::render::{Canvas, TextureQuery};
 use sdl2::video::Window;
-use sdl2::pixels::Color;
-
 
 pub(crate) fn generate_menu(canvas: &mut Canvas<Window>) {
     // side
@@ -18,13 +17,7 @@ pub(crate) fn generate_menu(canvas: &mut Canvas<Window>) {
     let texture_creator = canvas.texture_creator();
     canvas.set_draw_color(Color::RGB(0xFF, 0x00, 0xC4));
 
-    let menu_item = [
-        "Load",
-        "Reset",
-        "Setting",
-        "Quit",
-    ];
-
+    let menu_item = ["Load", "Reset", "Setting", "Quit"];
 
     const PITCH: i32 = 24;
     for (idx, item) in menu_item.iter().enumerate() {
@@ -37,9 +30,12 @@ pub(crate) fn generate_menu(canvas: &mut Canvas<Window>) {
             .unwrap();
 
         let TextureQuery { width, height, .. } = texture.query();
-        canvas.copy(&texture, None, Rect::new(
-            512 + PITCH, 360 + (idx as i32 * PITCH),
-            width, height,
-        )).unwrap();
+        canvas
+            .copy(
+                &texture,
+                None,
+                Rect::new(512 + PITCH, 360 + (idx as i32 * PITCH), width, height),
+            )
+            .unwrap();
     }
 }

@@ -6,12 +6,12 @@ use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::render::TextureQuery;
-use std::time::Duration;
-use std::rc::Rc;
 use std::cell::RefCell;
+use std::rc::Rc;
+use std::time::Duration;
 
-use crate::parser;
 use crate::arch::Arch;
+use crate::parser;
 
 pub fn run() {
     let sdl_context = sdl2::init().unwrap();
@@ -23,8 +23,7 @@ pub fn run() {
         .build()
         .unwrap();
 
-    let canvas =
-    Rc::new(RefCell::new(window.into_canvas().build().unwrap()));
+    let canvas = Rc::new(RefCell::new(window.into_canvas().build().unwrap()));
 
     // nes側
     let (prg, chr) = parser::parser("test.nes").unwrap();
@@ -35,9 +34,9 @@ pub fn run() {
     let texture = sprite_map::generate_sprites(texture_creator, character);
     let TextureQuery { width, height, .. } = texture.query();
 
-
-
-    canvas.borrow_mut().set_draw_color(Color::RGB(0xC4, 0xC4, 0xC4));
+    canvas
+        .borrow_mut()
+        .set_draw_color(Color::RGB(0xC4, 0xC4, 0xC4));
     canvas.borrow_mut().clear();
 
     menu::generate_menu(&mut canvas.borrow_mut());

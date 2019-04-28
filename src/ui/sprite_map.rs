@@ -2,7 +2,6 @@ use sdl2::pixels::PixelFormatEnum;
 use sdl2::render::{Texture, TextureCreator};
 use sdl2::video::WindowContext;
 
-
 use crate::arch::ppu::Pattern;
 
 pub(crate) fn generate_sprites(

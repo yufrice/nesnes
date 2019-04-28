@@ -108,7 +108,6 @@ pub struct Operation {
 use AddressingMode::*;
 use OPCode::*;
 
-
 impl Operation {
     /// 8bit -> OP/Addressing
     /// あとでhashmapから引くようにする
@@ -475,9 +474,5 @@ impl CPU {
 }
 
 fn create(op: OPCode, mode: AddressingMode, cycle: u32) -> Operation {
-    Operation {
-        op,
-        mode,
-        cycle,
-    }
+    Operation { op, mode, cycle }
 }

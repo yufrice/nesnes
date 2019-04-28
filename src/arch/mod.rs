@@ -5,12 +5,11 @@ pub mod ppu;
 pub mod register;
 
 use log::info;
-use std::cell::RefCell;
-use std::rc::Rc;
+use memory::{CPUMemory, PPURegister};
 use sdl2::render::Canvas;
 use sdl2::video::Window;
-
-use memory::{CPUMemory, PPURegister};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use register::Register;
 use {cpu::CPU, ppu::PPU};
@@ -41,7 +40,7 @@ pub struct Arch {
 }
 
 impl Arch {
-    pub fn new(rom: Vec<u8>, chr: Vec<u8>,canvas: RcRefCell<Canvas<Window>>) -> Arch {
+    pub fn new(rom: Vec<u8>, chr: Vec<u8>, canvas: RcRefCell<Canvas<Window>>) -> Arch {
         info!("PPU Register init");
         let ppu_reg = Rc::new(RefCell::new(PPURegister::default()));
         info!("CPU Register init");
@@ -64,7 +63,7 @@ impl Arch {
     pub fn frame(&self) {
         let addr = self.cpu.fetch();
         let opecode = op::Operation::new(addr);
-        info!("{:?}", opecode);
+        //info!("{:?}", opecode);
         self.cpu.exec(&opecode);
         self.ppu.run(3 * opecode.cycle);
     }

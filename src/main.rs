@@ -1,5 +1,5 @@
-use std::env;
 use env_logger;
+use std::env;
 
 extern crate nesnes;
 

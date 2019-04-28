@@ -9,7 +9,6 @@ pub struct CPU {
 }
 
 impl CPU {
-
     pub(crate) fn fetch(&self) -> u8 {
         let addr = 0x8000u16 + self.register.pc.get();
         self.register.pc_increment();
@@ -21,7 +20,6 @@ impl CPU {
         let count = (0x100 | u16::from(self.register.sp.get())) - 1;
         self.memory.wram.borrow_mut()[count as usize] = pc;
         self.register.sp.set(count as u8);
-
     }
 
     pub(crate) fn exec(&self, opcode: &Operation) {

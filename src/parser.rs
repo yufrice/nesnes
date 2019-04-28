@@ -1,6 +1,6 @@
 use std::fs;
-use std::io::BufReader;
 use std::io::prelude::Read;
+use std::io::BufReader;
 
 pub fn parser(path: &str) -> Result<(Vec<u8>, Vec<u8>), String> {
     let f = fs::File::open(path).map_err(|v| format!("{}", v))?;

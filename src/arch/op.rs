@@ -114,7 +114,15 @@ impl Operation {
     /// あとでhashmapから引くようにする
     pub fn new(op: u8) -> Operation {
         match op {
-            // ADC
+            0x69 => create(ADC, Immediate, 2),
+            0x65 => create(ADC, ZeroPage, 3),
+            0x75 => create(ADC, ZeroPageX, 4),
+            0x6D => create(ADC, Absolute, 4),
+            0x7D => create(ADC, AbsoluteX, 4),
+            0x79 => create(ADC, AbsoluteY, 4),
+            0x61 => create(ADC, IndirectX, 6),
+            0x71 => create(ADC, IndirectY, 5),
+
             0x29 => create(AND, Immediate, 2),
             0x25 => create(AND, ZeroPage, 3),
             0x35 => create(AND, ZeroPageX, 4),
@@ -164,7 +172,14 @@ impl Operation {
             0x11 => create(ORA, IndirectY, 5),
             // ROL
             // ROR
-            // SBC
+            0xE9 => create(SBC, Immediate, 2),
+            0xE5 => create(SBC, ZeroPage, 3),
+            0xF5 => create(SBC, ZeroPageX, 4),
+            0xED => create(SBC, Absolute, 4),
+            0xFD => create(SBC, AbsoluteX, 4),
+            0xF9 => create(SBC, AbsoluteY, 4),
+            0xE1 => create(SBC, IndirectX, 6),
+            0xF1 => create(SBC, IndirectY, 5),
 
             // Stack
             // PHA
@@ -347,7 +362,7 @@ impl CPU {
 
         let result = (i16::from(lhs) - i16::from(opeland)) as u16;
 
-       self.nzc_withSet(result, WriteAddr::None);
+        self.nzc_withSet(result, WriteAddr::None);
     }
 
     pub(crate) fn acc_op(&self, op: &OPCode, opeland: u8) {

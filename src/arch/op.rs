@@ -284,7 +284,7 @@ impl CPU {
         }
     }
 
-    pub(crate) fn nzc_withSet(&self,result: u16, addr: WriteAddr) {
+    pub(crate) fn nzc_withSet(&self, result: u16, addr: WriteAddr) {
         // 符号なしオーバーフロー
         let carry = result > 0xFF;
         // フローカット

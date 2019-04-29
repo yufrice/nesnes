@@ -1,9 +1,9 @@
 use log::info;
 use sdl2::pixels::PixelFormatEnum;
+use sdl2::rect::Rect;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
 use std::cell::RefCell;
-
 
 use crate::arch::memory::{PPUMemory, PPURegister};
 use crate::arch::RcRefCell;
@@ -15,25 +15,9 @@ pub(crate) struct PPU {
     /// CHR
     pub(crate) pattern0: Pattern,
     pub(crate) state: RefCell<PPUState>,
-    pub(crate) display: Display,
+    pub(crate) display: RefCell<[u8; 61440]>,
     pub(crate) ioc: RcRefCell<PPURegister>,
     pub(crate) canvas: RcRefCell<Canvas<Window>>,
-}
-
-// 実機はプールしないでレンダリングしてる
-// 多分render実装したら消える
-pub(crate) struct Display {
-    pub(crate) sprite: RefCell<[u8; 0x3C0]>,
-    pub(crate) attribute: RefCell<[u8; 240]>,
-}
-
-impl Default for Display {
-    fn default() -> Self {
-        Self {
-            sprite: RefCell::new([0x00; 0x3C0]),
-            attribute: RefCell::new([0x00; 240]),
-        }
-    }
 }
 
 impl PPU {
@@ -60,7 +44,7 @@ impl PPU {
         PPU {
             pattern0: *buffer,
             state: RefCell::new(state),
-            display: Display::default(),
+            display: RefCell::new([0; 61440]),
             /// I/O CPU Register
             ioc,
             canvas,
@@ -71,20 +55,17 @@ impl PPU {
         let state = &self.state;
         let line = state.borrow().line;
         state.borrow_mut().cycle += cycle;
-        match line {
-            // background
-            // sprites generate
-            // 8 x 8 x 8
-            0...239 if line % 8 == 0 => self.sprite_generate(),
-            // pre render line VBLANk
-            240...261 => (),
-            _ => (),
-        };
 
         // 341クロックで1line描写
         if state.borrow().cycle >= 341 {
-            state.borrow_mut().cycle -= 341;
             state.borrow_mut().line += 1;
+            match line {
+                0...239 if line % 8 == 0 => self.sprite_generate(),
+                262 => state.borrow_mut().line = 0,
+                _ => (),
+            };
+
+            state.borrow_mut().cycle -= 341;
         }
     }
 
@@ -99,28 +80,110 @@ impl PPU {
         self.pattern0
     }
 
-    // generateじゃなくてrender的になるはず
     pub(crate) fn sprite_generate(&self) {
-        let texture_creator = self.canvas.borrow().texture_creator();
-        let mut texture = texture_creator
-            .create_texture_streaming(PixelFormatEnum::RGB24, 8 * 8 * 8, 8 * 8)
-            .unwrap();
+        static color_palettes: [[u8; 0x03]; 0x40] = [
+            [84, 84, 84],
+            [0, 30, 116],
+            [8, 16, 144],
+            [48, 0, 136],
+            [68, 0, 100],
+            [92, 0, 48],
+            [84, 4, 0],
+            [60, 24, 0],
+            [32, 42, 0],
+            [8, 58, 0],
+            [0, 64, 0],
+            [0, 60, 0],
+            [0, 50, 60],
+            [0, 0, 0],
+            [0, 0, 0],
+            [0, 0, 0],
+            [152, 150, 152],
+            [8, 76, 196],
+            [48, 50, 236],
+            [92, 30, 228],
+            [136, 20, 176],
+            [160, 20, 100],
+            [152, 34, 32],
+            [120, 60, 0],
+            [84, 90, 0],
+            [40, 114, 0],
+            [8, 124, 0],
+            [0, 118, 40],
+            [0, 102, 120],
+            [0, 0, 0],
+            [0, 0, 0],
+            [0, 0, 0],
+            [236, 238, 236],
+            [76, 154, 236],
+            [120, 124, 236],
+            [176, 98, 236],
+            [228, 84, 236],
+            [236, 88, 180],
+            [236, 106, 100],
+            [212, 136, 32],
+            [160, 170, 0],
+            [116, 196, 0],
+            [76, 208, 32],
+            [56, 204, 108],
+            [56, 180, 204],
+            [60, 60, 60],
+            [0, 0, 0],
+            [0, 0, 0],
+            [236, 238, 236],
+            [168, 204, 236],
+            [188, 188, 236],
+            [212, 178, 236],
+            [236, 174, 236],
+            [236, 174, 212],
+            [236, 180, 176],
+            [228, 196, 144],
+            [204, 210, 120],
+            [180, 222, 120],
+            [168, 226, 144],
+            [52, 226, 180],
+            [160, 214, 228],
+            [160, 162, 160],
+            [0, 0, 0],
+            [0, 0, 0],
+        ];
+
+        const SPRITE_WIDTH: u32 = 32;
+        const SPRITE_HEIGHT: u32 = 30;
+        const WIDTH: u32 = 8 * SPRITE_WIDTH;
+        const HEIGHT: u32 = 8 * SPRITE_HEIGHT;
 
         let PPUMemory(ref vram) = self.ioc.borrow().ppudata;
-        info!("{}", self.state.borrow().line);
         let line = self.state.borrow().line as usize / 8usize;
         let range = line * 8..(line + 1) * 8;
-        // ここでlockして
+
         for line in range {
-            for idx in 0..8 {
-                let (x, y) = position_map((line * 8 + idx) as i32);
-                for pixel in self.pattern0[vram.borrow()[line] as usize].iter() {}
+            // マジックナンバー化してるとこなおす
+            for idx in 0..32 {
+                let sprite_idx = line * 32 + idx;
                 // カラーパレット読んでRGB行列に落とす
+                // plt = line->ram->plt
+                for (pixel_idx, pixel) in self.pattern0[vram.borrow()[line] as usize]
+                    .iter()
+                    .enumerate()
+                {
+                    let sprite_x_idx = sprite_idx % 32;
+                    let sprite_y_idx = line;
+                    let pixel_x_idx = pixel_idx % 8;
+                    let pixel_y_idx = pixel_idx / 8;
+
+                    let offset = sprite_x_idx * 24
+                        + sprite_y_idx * 3 * 8 * 32 * 8
+                        + pixel_x_idx * 3
+                        + pixel_y_idx * 3 * 8 * 32;
+                    let color = color_palettes[*pixel as usize];
+
+                    self.display.borrow_mut()[offset] = color[0];
+                    self.display.borrow_mut()[offset+1] = color[1];
+                    self.display.borrow_mut()[offset|2] = color[2];
+                }
             }
-            //self.display.sprite.borrow_mut()[line] = vram.borrow()[line];
         }
-        // ここでレンダリング
-        panic!();
     }
 }
 
@@ -136,80 +199,8 @@ impl Default for PPUState {
     }
 }
 
-
-pub(crate) fn position_map(idx: i32) -> (i32, i32) {
-    let x_idx = idx % 16 * 8;
-    let y_idx = (idx - (idx % 16)) / 16 * 8;
-    (x_idx, y_idx)
-}
-
-pub(crate) fn generate_sprite(sprite: [u8; 64]) -> [u8; 64 * 3] {
-    static color_palettes: [[u8; 0x03]; 0x40] = [
-        [84, 84, 84],
-        [0, 30, 116],
-        [8, 16, 144],
-        [48, 0, 136],
-        [68, 0, 100],
-        [92, 0, 48],
-        [84, 4, 0],
-        [60, 24, 0],
-        [32, 42, 0],
-        [8, 58, 0],
-        [0, 64, 0],
-        [0, 60, 0],
-        [0, 50, 60],
-        [0, 0, 0],
-        [0, 0, 0],
-        [0, 0, 0],
-        [152, 150, 152],
-        [8, 76, 196],
-        [48, 50, 236],
-        [92, 30, 228],
-        [136, 20, 176],
-        [160, 20, 100],
-        [152, 34, 32],
-        [120, 60, 0],
-        [84, 90, 0],
-        [40, 114, 0],
-        [8, 124, 0],
-        [0, 118, 40],
-        [0, 102, 120],
-        [0, 0, 0],
-        [0, 0, 0],
-        [0, 0, 0],
-        [236, 238, 236],
-        [76, 154, 236],
-        [120, 124, 236],
-        [176, 98, 236],
-        [228, 84, 236],
-        [236, 88, 180],
-        [236, 106, 100],
-        [212, 136, 32],
-        [160, 170, 0],
-        [116, 196, 0],
-        [76, 208, 32],
-        [56, 204, 108],
-        [56, 180, 204],
-        [60, 60, 60],
-        [0, 0, 0],
-        [0, 0, 0],
-        [236, 238, 236],
-        [168, 204, 236],
-        [188, 188, 236],
-        [212, 178, 236],
-        [236, 174, 236],
-        [236, 174, 212],
-        [236, 180, 176],
-        [228, 196, 144],
-        [204, 210, 120],
-        [180, 222, 120],
-        [168, 226, 144],
-        [52, 226, 180],
-        [160, 214, 228],
-        [160, 162, 160],
-        [0, 0, 0],
-        [0, 0, 0],
-    ];
-    for pixel in sprite.iter() {}
-    unimplemented!()
+pub(crate) fn position_map(idx: i32) -> (usize, usize) {
+    let x_idx = idx % 32 * 8 * 3;
+    let y_idx = idx / 32 * 8 * 3 * 32;
+    (x_idx as usize, y_idx as usize)
 }

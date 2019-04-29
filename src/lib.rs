@@ -10,3 +10,10 @@ extern crate sdl2;
 pub mod arch;
 pub mod parser;
 pub mod ui;
+
+const SPRITE_SIDE: usize = 8;
+const SPRITE: usize = SPRITE_SIDE * SPRITE_SIDE;
+const PATTERN_LENGTH: usize = 0x200;
+
+const DISPLAY_SIZE: usize = 184_320;
+const DISPLAY_SPRITE_WIDTH: usize = 32;

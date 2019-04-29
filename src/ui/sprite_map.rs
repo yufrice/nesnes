@@ -3,6 +3,7 @@ use sdl2::render::{Texture, TextureCreator};
 use sdl2::video::WindowContext;
 
 use crate::arch::ppu::Pattern;
+use crate::SPRITE_SIDE;
 
 pub(crate) fn generate_sprites(
     texture_creator: TextureCreator<WindowContext>,
@@ -17,6 +18,7 @@ pub(crate) fn generate_sprites(
 
     const TEXTURE_WIDTH: u32 = 128;
     const TEXTURE_HEIGHT: u32 = 340;
+    const DISPLAY_WIDTH: usize = 16;
     let mut texture = texture_creator
         .create_texture_streaming(PixelFormatEnum::RGB24, TEXTURE_WIDTH, TEXTURE_HEIGHT)
         .unwrap();
@@ -25,14 +27,14 @@ pub(crate) fn generate_sprites(
             for (sprite_idx, sprite) in chr.iter().enumerate() {
                 for (idx, pixel) in sprite.iter().enumerate() {
                     let sprite_next = |idx, sprite_idx| -> usize {
-                        let sprite_x_idx = sprite_idx % 16;
-                        let sprite_y_idx = sprite_idx / 16;
-                        let pixel_x_idx = idx % 8;
-                        let pixel_y_idx = idx / 8;
-                        (sprite_x_idx * 8
-                            + sprite_y_idx * 128 * 8
+                        let sprite_x_idx = sprite_idx % DISPLAY_WIDTH;
+                        let sprite_y_idx = sprite_idx / DISPLAY_WIDTH;
+                        let pixel_x_idx = idx % SPRITE_SIDE;
+                        let pixel_y_idx = idx / SPRITE_SIDE;
+                        (sprite_x_idx * SPRITE_SIDE
+                            + sprite_y_idx * (TEXTURE_WIDTH as usize) * SPRITE_SIDE
                             + pixel_x_idx
-                            + pixel_y_idx * 128)
+                            + pixel_y_idx * (TEXTURE_WIDTH as usize))
                             * 3
                     };
                     let offset = sprite_next(idx, sprite_idx);

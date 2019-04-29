@@ -8,7 +8,6 @@ use sdl2::rect::Rect;
 use sdl2::render::TextureQuery;
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::time::Duration;
 
 use crate::arch::Arch;
 use crate::parser;

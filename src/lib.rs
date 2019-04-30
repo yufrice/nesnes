@@ -17,3 +17,5 @@ const PATTERN_LENGTH: usize = 0x200;
 
 const DISPLAY_SIZE: usize = 184_320;
 const DISPLAY_SPRITE_WIDTH: usize = 32;
+const DISPLAY_HEIGHT: usize = 240;
+const DISPLAY_WIDTH: usize = 256;

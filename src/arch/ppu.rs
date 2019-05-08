@@ -167,7 +167,6 @@ impl PPU {
 
         let vram = &self.ioc.borrow().ppudata;
 
-
         let line = self.state.borrow().line as usize / 8usize;
         self.display
             .borrow_mut()

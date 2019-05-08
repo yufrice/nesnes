@@ -183,7 +183,7 @@ impl PPU {
                         let pixel_y_idx = pixel_idx / SPRITE_SIDE;
 
                         let offset = sprite_x_idx * SPRITE_SIDE * 3
-                            + sprite_y_idx * 3 * DISPLAY_WIDTH
+                            + sprite_y_idx * 3 * DISPLAY_WIDTH * 8
                             + pixel_x_idx * 3
                             + pixel_y_idx * 3 * SPRITE_SIDE * DISPLAY_SPRITE_WIDTH;
 

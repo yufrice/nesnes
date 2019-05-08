@@ -165,7 +165,8 @@ impl PPU {
             [0, 0, 0],
         ];
 
-        let PPUMemory(ref vram) = self.ioc.borrow().ppudata;
+        let vram = &self.ioc.borrow().ppudata;
+
 
         let line = self.state.borrow().line as usize / 8usize;
         self.display
@@ -173,7 +174,7 @@ impl PPU {
             .with_lock(None, |buffer: &mut [u8], pitch: usize| {
                 for idx in 0..DISPLAY_SPRITE_WIDTH {
                     let sprite_idx = line * DISPLAY_SPRITE_WIDTH + idx;
-                    for (pixel_idx, pixel) in self.pattern0[vram.borrow()[line] as usize]
+                    for (pixel_idx, pixel) in self.pattern0[vram.read(sprite_idx + 0x2000) as usize]
                         .iter()
                         .enumerate()
                     {

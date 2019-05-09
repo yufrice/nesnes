@@ -448,13 +448,13 @@ impl CPU {
     }
 
     pub(crate) fn store_op(&self, op: &OPCode, opeland: usize) {
-        self.register.soft_reset();
         match op {
             STA => self.memory.write(self.register.a.get(), opeland),
             STX => self.memory.write(self.register.x.get(), opeland),
             STY => self.memory.write(self.register.y.get(), opeland),
             _ => unreachable!(),
         };
+        self.register.soft_reset();
     }
 
     pub(crate) fn branch_op(&self, op: &OPCode, opeland: u16) {

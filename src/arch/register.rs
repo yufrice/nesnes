@@ -35,6 +35,14 @@ impl Register {
         self.pc.set(1 + self.pc.get());
     }
 
+    pub(crate) fn sp_increment(&self) {
+        self.sp.set(1 + self.sp.get());
+    }
+
+    pub(crate) fn sp_decrement(&self) {
+        self.sp.set(self.sp.get() - 1);
+    }
+
     pub(crate) fn soft_reset(&self) {
         self.p.set(State::default());
     }

@@ -77,6 +77,7 @@ impl PPU {
                 0...239 if line % 8 == 0 => self.sprite_generate(),
                 // 描画
                 240 => self.flush_sprite(),
+                241 => self.ioc.borrow().set_vblank(),
                 262 => state.borrow_mut().line = 0,
                 _ => (),
             };

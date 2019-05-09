@@ -21,7 +21,14 @@ impl CPU {
         let pc = self.register.pc.get() as u8;
         let count = (0x100 | u16::from(self.register.sp.get())) - 1;
         self.memory.wram.borrow_mut()[count as usize] = pc;
-        self.register.sp.set(count as u8);
+        self.register.sp_decrement();
+    }
+
+    pub(crate) fn stack_pop(&self) {
+        let count = (0x100 | u16::from(self.register.sp.get())) - 1;
+        let pc = self.memory.wram.borrow()[count as usize];
+        self.register.sp_increment();
+        self.register.pc.set(pc.into());
     }
 
     pub(crate) fn exec(&self, opcode: &Operation) {

@@ -63,7 +63,7 @@ impl Arch {
     pub fn frame(&self) {
         let addr = self.cpu.fetch();
         let opecode = op::Operation::new(addr);
-        //info!("{:?}", opecode);
+        // info!("{:?}", opecode);
         self.cpu.exec(&opecode);
         self.ppu.run(3 * opecode.cycle);
     }

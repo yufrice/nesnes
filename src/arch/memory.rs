@@ -46,8 +46,10 @@ impl CPUMemory {
                 0x2000 => unreachable!(),
                 0x2001 => unreachable!(),
                 0x2002 => {
-                    ppu_reg.ppuscroll.set(0x00);
-                    ppu_reg.ppustatus.get()
+                    let reg = ppu_reg.ppustatus.get();
+                    // VBlankクリア
+                    ppu_reg.ppustatus.set(reg & 0b0111_1111);
+                    reg
                 }
                 0x2003 => unreachable!(),
                 0x2004 => ppu_reg.oamdata.get(),
@@ -286,5 +288,12 @@ impl Default for PPURegister {
             ppuaddr_bit_flag: Cell::new(BitFlag::High),
             ppudata: PPUMemory::default(),
         }
+    }
+}
+
+impl PPURegister {
+    pub(crate) fn set_vblank(&self) {
+        let reg = self.ppustatus.get();
+        self.ppustatus.set(reg | 0x80);
     }
 }

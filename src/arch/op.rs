@@ -144,8 +144,12 @@ impl Operation {
             0xD9 => create(CMP, AbsoluteY, 4),
             0xC1 => create(CMP, IndirectX, 6),
             0xD1 => create(CMP, IndirectY, 5),
-            // CPX
-            // CPY
+            0xE0 => create(CPX, Immediate, 2),
+            0xE4 => create(CPX, ZeroPage, 3),
+            0xEC => create(CPX, Absolute, 4),
+            0xC0 => create(CPY, Immediate, 2),
+            0xC4 => create(CPY, ZeroPage, 3),
+            0xCC => create(CPY, Absolute, 4),
             // DEC
             // DEX
             0xCA => create(DEX, Implied, 2),
@@ -233,7 +237,9 @@ impl Operation {
             0x99 => create(STA, AbsoluteY, 5),
             0x81 => create(STA, IndirectX, 6),
             0x91 => create(STA, IndirectY, 6),
-            // STX
+            0x86 => create(STX, ZeroPage, 3),
+            0x96 => create(STX, ZeroPageY, 4),
+            0x8E => create(STX, Absolute, 4),
             // STY
             // TAX
             // TAY
@@ -406,15 +412,16 @@ impl CPU {
 
     pub(crate) fn jump_op(&self, op: &OPCode, opeland: u16) {
         self.register.soft_reset();
+        let addr = opeland - 0x8000;
         match op {
             JMP => {
-                let addr = opeland - 0x8000;
                 self.register.pc.set(addr)
             }
             JSR => {
                 self.stack_push();
+                self.register.pc.set(addr);
             }
-            RTS => unimplemented!(),
+            RTS => self.stack_pop(),
             RTI => unimplemented!(),
             _ => unreachable!(),
         }

@@ -25,7 +25,7 @@ pub fn run() {
     let canvas = Rc::new(RefCell::new(window.into_canvas().build().unwrap()));
 
     // nes側
-    let (prg, chr) = parser::parser("test.nes").unwrap();
+    let (prg, chr) = parser::parser("test0.nes").unwrap();
     let arch = Arch::new(prg, chr, canvas.clone());
     let character = arch.ppu.sprite_flush();
 

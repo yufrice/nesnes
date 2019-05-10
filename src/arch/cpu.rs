@@ -101,16 +101,18 @@ impl CPU {
                 ),
 
             // Jump
-            (OPCode::JMP, opeland)
-            | (OPCode::JSR, opeland)
-            | (OPCode::RTS, opeland)
-            | (OPCode::RTI, opeland) => self.jump_op(
+            (OPCode::JMP, opeland) | (OPCode::JSR, opeland) => self.jump_op(
                 &opcode.op,
                 match opeland {
                     Opeland::Address(adr) => adr,
                     _ => unreachable!(),
                 },
             ),
+
+            // Return
+            (OPCode::RTS, Opeland::None) | (OPCode::RTI, Opeland::None) => {
+                self.return_op(&opcode.op)
+            }
 
             // Copy
             (OPCode::TAX, Opeland::None)

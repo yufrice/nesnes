@@ -16,19 +16,16 @@ impl CPU {
         self.memory.read(addr as usize)
     }
 
-    // wip
-    pub(crate) fn stack_push(&self) {
-        let pc = self.register.pc.get() as u8;
-        let count = (0x100 | u16::from(self.register.sp.get())) - 1;
-        self.memory.wram.borrow_mut()[count as usize] = pc;
+    pub(crate) fn stack_push(&self, data: u8) {
+        let addr = 0x100usize | (usize::from(self.register.sp.get()) & 0xFF);
+        self.memory.write(data, addr);
         self.register.sp_decrement();
     }
 
-    pub(crate) fn stack_pop(&self) {
-        let count = (0x100 | u16::from(self.register.sp.get())) - 1;
-        let pc = self.memory.wram.borrow()[count as usize];
+    pub(crate) fn stack_pop(&self) -> u8 {
         self.register.sp_increment();
-        self.register.pc.set(pc.into());
+        let addr = 0x100usize | (usize::from(self.register.sp.get()) & 0xFF);
+        self.memory.read(addr)
     }
 
     pub(crate) fn exec(&self, opcode: &Operation) {

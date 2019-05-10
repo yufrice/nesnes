@@ -205,7 +205,7 @@ impl Operation {
             0x4C => create(JMP, Absolute, 3),
             0x6C => create(JMP, Indirect, 5),
             0x20 => create(JSR, Absolute, 6),
-            // RTS
+            0x60 => create(RTS, Implied, 6),
             // RTI
 
             // Load
@@ -425,14 +425,14 @@ impl CPU {
                 self.stack_push(pc_low);
                 self.register.pc.set(addr);
             }
-            RTS => {
-                let pc_low = u16::from(self.stack_pop());
-                let pc_high = u16::from(self.stack_pop()) << 8;
-                self.register.pc.set(pc_low + pc_high)
-            }
-            RTI => unimplemented!(),
             _ => unreachable!(),
         }
+    }
+
+    pub(crate) fn rt_op(&self, op: &OPCode) {
+        let pc_low = u16::from(self.stack_pop());
+        let pc_high = u16::from(self.stack_pop()) << 8;
+        self.register.pc.set(pc_low + pc_high)
     }
 
     pub(crate) fn load_op(&self, op: &OPCode, opeland: Opeland) {

@@ -69,6 +69,7 @@ impl CPU {
             // (in,de) crement
             (OPCode::INC, opeland)
             | (OPCode::DEC, opeland)
+            | (OPCode::DEX, opeland)
             | (OPCode::INX, opeland)
             | (OPCode::INY, opeland)
             | (OPCode::DEY, opeland) => self.register_acc_op(&opcode.op, opeland),

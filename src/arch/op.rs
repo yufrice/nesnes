@@ -391,6 +391,7 @@ impl CPU {
             Opeland::Value(value) => value,
             Opeland::Address(adr) => self.memory.read(adr as usize),
             Opeland::None if op == &OPCode::INX => self.register.x.get(),
+            Opeland::None if op == &OPCode::DEX => self.register.x.get(),
             Opeland::None if op == &OPCode::INY => self.register.y.get(),
             Opeland::None if op == &OPCode::DEY => self.register.y.get(),
             _ => unreachable!(),
@@ -404,6 +405,7 @@ impl CPU {
                 self.nz_withSet(value - 1, WriteAddr::Memory(addr as usize))
             }
             (INX, Opeland::None) => self.nz_withSet(value.calc_add(1), WriteAddr::x),
+            (DEX, Opeland::None) => self.nz_withSet(value.calc_sub(1), WriteAddr::x),
             (INY, Opeland::None) => self.nz_withSet(value.calc_add(1), WriteAddr::y),
             (DEY, Opeland::None) => self.nz_withSet(value.calc_sub(1), WriteAddr::y),
             _ => unreachable!(),

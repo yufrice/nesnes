@@ -69,7 +69,7 @@ impl Arch {
     }
 }
 
-trait Accumulate {
+pub trait Accumulate {
     fn calc_add(&self, rhs: Self) -> Self;
     fn calc_sub(&self, rhs: Self) -> Self;
 }
@@ -81,5 +81,34 @@ impl Accumulate for u8 {
 
     fn calc_sub(&self, rhs: u8) -> u8 {
         self.checked_sub(rhs).unwrap_or(u8::max_value())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::arch::Accumulate;
+
+    #[test]
+    fn is_u8_add_flow() {
+        let lhs = u8::max_value();
+        assert_eq!(lhs.calc_add(1u8), 0u8);
+    }
+
+    #[test]
+    fn is_not_u8_add_flow() {
+        let lhs = 0u8;
+        assert_eq!(lhs.calc_add(1u8), 1u8);
+    }
+
+    #[test]
+    fn is_u8_sub_flow() {
+        let lhs = 0u8;
+        assert_eq!(lhs.calc_sub(1), u8::max_value());
+    }
+
+    #[test]
+    fn is_not_u8_sub_flow() {
+        let lhs = 10u8;
+        assert_eq!(lhs.calc_sub(1), 9u8);
     }
 }

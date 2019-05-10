@@ -84,6 +84,16 @@ impl Accumulate for u8 {
     }
 }
 
+impl Accumulate for u16 {
+    fn calc_add(&self, rhs: u16) -> u16 {
+        self.checked_add(rhs).unwrap_or(0)
+    }
+
+    fn calc_sub(&self, rhs: u16) -> u16 {
+        self.checked_sub(rhs).unwrap_or(u16::max_value())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::arch::Accumulate;

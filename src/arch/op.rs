@@ -1,4 +1,4 @@
-use crate::arch::{cpu::CPU, register::State, Opeland, WriteAddr};
+use crate::arch::{Accumulate, cpu::CPU, register::State, Opeland, WriteAddr};
 
 #[derive(Debug, PartialEq)]
 pub enum OPCode {
@@ -403,9 +403,9 @@ impl CPU {
             (DEC, Opeland::Address(addr)) => {
                 self.nz_withSet(value - 1, WriteAddr::Memory(addr as usize))
             }
-            (INX, Opeland::None) => self.nz_withSet(value + 1, WriteAddr::x),
-            (INY, Opeland::None) => self.nz_withSet(value + 1, WriteAddr::y),
-            (DEY, Opeland::None) => self.nz_withSet(value - 1, WriteAddr::y),
+            (INX, Opeland::None) => self.nz_withSet(value.calc_add(1), WriteAddr::x),
+            (INY, Opeland::None) => self.nz_withSet(value.calc_add(1), WriteAddr::y),
+            (DEY, Opeland::None) => self.nz_withSet(value.calc_sub(1), WriteAddr::y),
             _ => unreachable!(),
         }
     }
@@ -418,10 +418,18 @@ impl CPU {
                 self.register.pc.set(addr)
             }
             JSR => {
-                self.stack_push();
+                let pc = self.register.pc.get() - 1;
+                let pc_high = (pc >> 8) as u8 & 0xFF;
+                let pc_low = (pc & 0xFF) as u8;
+                self.stack_push(pc_high);
+                self.stack_push(pc_low);
                 self.register.pc.set(addr);
             }
-            RTS => self.stack_pop(),
+            RTS => {
+                let pc_low = u16::from(self.stack_pop());
+                let pc_high = u16::from(self.stack_pop()) << 8;
+                self.register.pc.set(pc_low + pc_high)
+                },
             RTI => unimplemented!(),
             _ => unreachable!(),
         }

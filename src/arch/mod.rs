@@ -68,3 +68,18 @@ impl Arch {
         self.ppu.run(3 * opecode.cycle);
     }
 }
+
+trait Accumulate {
+    fn calc_add(&self, rhs: Self) -> Self;
+    fn calc_sub(&self, rhs: Self) -> Self;
+}
+
+impl Accumulate for u8 {
+    fn calc_add(&self, rhs: u8) -> u8 {
+        self.checked_add(rhs).unwrap_or(0)
+    }
+
+    fn calc_sub(&self, rhs: u8) -> u8 {
+        self.checked_sub(rhs).unwrap_or(u8::max_value())
+    }
+}

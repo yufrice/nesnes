@@ -24,7 +24,7 @@ impl Default for Register {
             x: Cell::new(0x00),
             y: Cell::new(0x00),
             pc: Cell::new(0x0000),
-            sp: Cell::new(0x00),
+            sp: Cell::new(0xFF),
             p: Cell::new(state),
         }
     }

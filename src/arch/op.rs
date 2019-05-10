@@ -1,4 +1,4 @@
-use crate::arch::{Accumulate, cpu::CPU, register::State, Opeland, WriteAddr};
+use crate::arch::{cpu::CPU, register::State, Accumulate, Opeland, WriteAddr};
 
 #[derive(Debug, PartialEq)]
 pub enum OPCode {
@@ -416,9 +416,7 @@ impl CPU {
         self.register.soft_reset();
         let addr = opeland - 0x8000;
         match op {
-            JMP => {
-                self.register.pc.set(addr)
-            }
+            JMP => self.register.pc.set(addr),
             JSR => {
                 let pc = self.register.pc.get() - 1;
                 let pc_high = (pc >> 8) as u8 & 0xFF;
@@ -431,7 +429,7 @@ impl CPU {
                 let pc_low = u16::from(self.stack_pop());
                 let pc_high = u16::from(self.stack_pop()) << 8;
                 self.register.pc.set(pc_low + pc_high)
-                },
+            }
             RTI => unimplemented!(),
             _ => unreachable!(),
         }

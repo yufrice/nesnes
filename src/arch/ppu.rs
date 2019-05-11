@@ -18,7 +18,8 @@ pub(crate) struct PPU {
     /// CHR
     pub(crate) pattern0: Pattern,
     pub(crate) state: RefCell<PPUState>,
-    pub(crate) display: RefCell<Texture>,
+    pub(crate) display0: RefCell<Texture>,
+    pub(crate) display1: RefCell<Texture>,
     pub(crate) ioc: RcRefCell<PPURegister>,
     pub(crate) canvas: RcRefCell<Canvas<Window>>,
 }
@@ -46,7 +47,15 @@ impl PPU {
         let buffer = &mut [[0u8; SPRITE]; PATTERN_LENGTH];
 
         let texture_creator = canvas.borrow().texture_creator();
-        let mut texture = texture_creator
+        let mut texture0 = texture_creator
+            .create_texture_streaming(
+                PixelFormatEnum::RGB24,
+                DISPLAY_WIDTH as u32,
+                DISPLAY_HEIGHT as u32,
+            )
+            .unwrap();
+
+        let mut texture1 = texture_creator
             .create_texture_streaming(
                 PixelFormatEnum::RGB24,
                 DISPLAY_WIDTH as u32,
@@ -58,7 +67,8 @@ impl PPU {
         PPU {
             pattern0: *buffer,
             state: RefCell::new(state),
-            display: RefCell::new(texture),
+            display0: RefCell::new(texture0),
+            display1: RefCell::new(texture1),
             /// I/O CPU Register
             ioc,
             canvas,
@@ -169,7 +179,7 @@ impl PPU {
         let vram = &self.ioc.borrow().ppudata;
 
         let line = self.state.borrow().line as usize / 8usize;
-        self.display
+        self.display0
             .borrow_mut()
             .with_lock(None, |buffer: &mut [u8], pitch: usize| {
                 for idx in 0..DISPLAY_SPRITE_WIDTH {
@@ -204,7 +214,7 @@ impl PPU {
         self.canvas
             .borrow_mut()
             .copy(
-                &self.display.borrow(),
+                &self.display0.borrow(),
                 None,
                 Some(Rect::new(
                     0,

@@ -164,7 +164,7 @@ impl Operation {
             0xFE => create(INC, AbsoluteX, 7),
             // INX
             0xE8 => create(INX, Implied, 2),
-            // INY
+            0xC8 => create(INY, Implied, 2),
             // LSR
             0x09 => create(ORA, Immediate, 2),
             0x05 => create(ORA, ZeroPage, 3),

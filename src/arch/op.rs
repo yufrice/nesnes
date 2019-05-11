@@ -242,13 +242,11 @@ impl Operation {
             0x96 => create(STX, ZeroPageY, 4),
             0x8E => create(STX, Absolute, 4),
             // STY
-            // TAX
-            // TAY
-            // TSX
-            // TXA
-            // TXS
+            0xAA => create(TAX, Implied, 2),
+            0xA8 => create(TAY, Implied, 2),
+            0xBA => create(TSX, Implied, 2),
+            0x8A => create(TXA, Implied, 2),
             0x9A => create(TXS, Implied, 2),
-            // TYA
             0x98 => create(TYA, Implied, 2),
 
             // Implied

@@ -135,7 +135,8 @@ impl Operation {
             0x0E => create(ASL, Absolute, 6),
             0x16 => create(ASL, ZeroPageX, 6),
             0x1E => create(ASL, AbsoluteX, 7),
-            // BIT
+            0x24 => create(BIT, ZeroPage, 3),
+            0x2C => create(BIT, Absolute, 4),
             0xC9 => create(CMP, Immediate, 2),
             0xC5 => create(CMP, ZeroPage, 3),
             0xD5 => create(CMP, ZeroPageX, 4),
@@ -368,6 +369,20 @@ impl CPU {
         let result = (i16::from(lhs) - i16::from(opeland)) as u16;
 
         self.nzc_withSet(result, WriteAddr::None);
+    }
+
+    pub(crate) fn bit_test(&self, opeland: u8) {
+        let n = (opeland & 0x80) >> 7 == 1;
+        let v = (opeland & 0x40) >> 6 == 1;
+        let z = (opeland & self.register.a.get()) == 0;
+
+        let state = &self.register.p;
+        state.set(State {
+            n,
+            v,
+            z,
+            ..state.get()
+        });
     }
 
     pub(crate) fn acc_op(&self, op: &OPCode, opeland: u8) {

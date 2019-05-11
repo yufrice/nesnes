@@ -66,6 +66,13 @@ impl CPU {
                     },
                 ),
 
+            // bit test
+            (OPCode::BIT, opeland) => self.bit_test(match opeland {
+                Opeland::Value(val) => val,
+                Opeland::Address(adr) => self.memory.read(adr as usize),
+                _ => unreachable!(),
+            }),
+
             // (in,de) crement
             (OPCode::INC, opeland)
             | (OPCode::DEC, opeland)

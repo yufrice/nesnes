@@ -67,6 +67,10 @@ impl Arch {
         self.cpu.exec(&opecode);
         self.ppu.run(3 * opecode.cycle);
     }
+
+    pub fn reset(&self) {
+        self.cpu.register.hard_reset();
+    }
 }
 
 pub trait Accumulate {

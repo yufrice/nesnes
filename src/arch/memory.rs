@@ -137,9 +137,9 @@ impl CPUMemory {
                     ppu_reg.ppudata.write(usize::from(addr), value);
 
                     let counter = if 0 != (ppu_reg.ppuctrl.get() & 0x02) {
-                        1
-                    } else {
                         32
+                    } else {
+                        1
                     };
 
                     let addr = ppu_reg.ppuaddr.get();
@@ -195,7 +195,6 @@ impl PPUMemory {
     pub(crate) fn write(&self, addr: usize, value: u8) {
         let PPUMemory(vram) = self;
 
-        println!("{:X}", addr);
         let addr = match addr {
             0x0000...0x27FF => addr,
             // mirror 0x2000
@@ -207,7 +206,6 @@ impl PPUMemory {
             _ => unreachable!("PPU Write Address: {:X}", addr),
         };
 
-        println!("{:X}", addr);
         vram.borrow_mut()[addr] = value;
     }
 }

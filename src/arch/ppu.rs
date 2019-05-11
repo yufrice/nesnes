@@ -118,7 +118,12 @@ impl PPU {
         }
     }
 
-    pub(crate) fn get_attribute(&self, line: usize, sprite_idx: usize, display: DisplayID) {
+    pub(crate) fn get_attribute(
+        &self,
+        line: usize,
+        sprite_idx: usize,
+        display: DisplayID,
+    ) -> [[u8; 0x03]; 0x04] {
         // RGB 0x40色
         static color_palettes: [[u8; 0x03]; 0x40] = [
             [84, 84, 84],
@@ -197,6 +202,17 @@ impl PPU {
         } + sprite_idx / 4
             + line / 4 * 8;
         let attr = self.ioc.borrow().ppudata.read(addr);
+        let palette = attr & 0x02;
+        let color0 = self.ioc.borrow().ppudata.read(0x3F00 + palette as usize) as usize;
+        let color1 = self.ioc.borrow().ppudata.read(0x3f01 + palette as usize) as usize;
+        let color2 = self.ioc.borrow().ppudata.read(0x3f02 + palette as usize) as usize;
+        let color3 = self.ioc.borrow().ppudata.read(0x3f02 + palette as usize) as usize;
+        [
+            color_palettes[color0],
+            color_palettes[color1],
+            color_palettes[color2],
+            color_palettes[color3],
+        ]
     }
 
     pub fn sprite_flush(&self) -> Pattern {
@@ -204,74 +220,6 @@ impl PPU {
     }
 
     pub(crate) fn sprite_generate(&self) {
-        // RGB 0x40色
-        static color_palettes: [[u8; 0x03]; 0x40] = [
-            [84, 84, 84],
-            [0, 30, 116],
-            [8, 16, 144],
-            [48, 0, 136],
-            [68, 0, 100],
-            [92, 0, 48],
-            [84, 4, 0],
-            [60, 24, 0],
-            [32, 42, 0],
-            [8, 58, 0],
-            [0, 64, 0],
-            [0, 60, 0],
-            [0, 50, 60],
-            [0, 0, 0],
-            [0, 0, 0],
-            [0, 0, 0],
-            [152, 150, 152],
-            [8, 76, 196],
-            [48, 50, 236],
-            [92, 30, 228],
-            [136, 20, 176],
-            [160, 20, 100],
-            [152, 34, 32],
-            [120, 60, 0],
-            [84, 90, 0],
-            [40, 114, 0],
-            [8, 124, 0],
-            [0, 118, 40],
-            [0, 102, 120],
-            [0, 0, 0],
-            [0, 0, 0],
-            [0, 0, 0],
-            [236, 238, 236],
-            [76, 154, 236],
-            [120, 124, 236],
-            [176, 98, 236],
-            [228, 84, 236],
-            [236, 88, 180],
-            [236, 106, 100],
-            [212, 136, 32],
-            [160, 170, 0],
-            [116, 196, 0],
-            [76, 208, 32],
-            [56, 204, 108],
-            [56, 180, 204],
-            [60, 60, 60],
-            [0, 0, 0],
-            [0, 0, 0],
-            [236, 238, 236],
-            [168, 204, 236],
-            [188, 188, 236],
-            [212, 178, 236],
-            [236, 174, 236],
-            [236, 174, 212],
-            [236, 180, 176],
-            [228, 196, 144],
-            [204, 210, 120],
-            [180, 222, 120],
-            [168, 226, 144],
-            [52, 226, 180],
-            [160, 214, 228],
-            [160, 162, 160],
-            [0, 0, 0],
-            [0, 0, 0],
-        ];
-
         let vram = &self.ioc.borrow().ppudata;
 
         let line = self.state.borrow().line as usize / 8usize;
@@ -280,7 +228,7 @@ impl PPU {
             .with_lock(None, |buffer: &mut [u8], pitch: usize| {
                 for idx in 0..DISPLAY_SPRITE_WIDTH {
                     let sprite_idx = line * DISPLAY_SPRITE_WIDTH + idx;
-                    self.get_attribute(
+                    let color = self.get_attribute(
                         line,
                         sprite_idx % DISPLAY_SPRITE_WIDTH,
                         DisplayID::DISPLAY1,
@@ -299,12 +247,9 @@ impl PPU {
                             + pixel_x_idx * 3
                             + pixel_y_idx * 3 * SPRITE_SIDE * DISPLAY_SPRITE_WIDTH;
 
-                        // ラインとスプライト位置から属性テーブル参照するようにする
-                        let color = color_palettes[*pixel as usize];
-
-                        buffer[offset] = color[0];
-                        buffer[offset + 1] = color[1];
-                        buffer[offset + 2] = color[2];
+                        buffer[offset] = color[*pixel as usize][0];
+                        buffer[offset + 1] = color[*pixel as usize][1];
+                        buffer[offset + 2] = color[*pixel as usize][2];
                     }
                 }
             })

@@ -9,6 +9,7 @@ use sdl2::render::TextureQuery;
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use crate::arch::ppu::Mirroring;
 use crate::arch::Arch;
 use crate::parser;
 
@@ -25,8 +26,13 @@ pub fn run() {
     let canvas = Rc::new(RefCell::new(window.into_canvas().build().unwrap()));
 
     // nes側
-    let (prg, chr) = parser::parser("test0.nes").unwrap();
-    let arch = Arch::new(prg, chr, canvas.clone());
+    let (prg, chr, flag) = parser::parser("./roms/test2.nes").unwrap();
+    let mirroring = if flag >> 0x01 == 1 {
+        Mirroring::Vertial
+    } else {
+        Mirroring::Horizontal
+    };
+    let arch = Arch::new(prg, chr, canvas.clone(), mirroring);
     let character = arch.ppu.sprite_flush();
 
     let texture_creator = canvas.borrow().texture_creator();
@@ -53,7 +59,15 @@ pub fn run() {
                 | Event::KeyDown {
                     keycode: Some(Keycode::Escape),
                     ..
+                }
+                | Event::KeyDown {
+                    keycode: Some(Keycode::Q),
+                    ..
                 } => break 'running,
+                Event::KeyDown {
+                    keycode: Some(Keycode::R),
+                    ..
+                } => arch.reset(),
                 _ => {}
             }
         }

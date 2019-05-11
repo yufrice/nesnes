@@ -21,12 +21,18 @@ pub(crate) enum DisplayID {
     DISPLAY4,
 }
 
+pub enum Mirroring {
+    Horizontal,
+    Vertial,
+}
+
 pub(crate) struct PPU {
     /// CHR
     pub(crate) pattern0: Pattern,
     pub(crate) state: RefCell<PPUState>,
     pub(crate) display0: RefCell<Texture>,
     pub(crate) display1: RefCell<Texture>,
+    pub(crate) mirroring: Mirroring,
     pub(crate) ioc: RcRefCell<PPURegister>,
     pub(crate) canvas: RcRefCell<Canvas<Window>>,
 }
@@ -36,6 +42,7 @@ impl PPU {
         chr: Vec<u8>,
         ioc: RcRefCell<PPURegister>,
         canvas: RcRefCell<Canvas<Window>>,
+        mirroring: Mirroring,
     ) -> PPU {
         fn parse_sprite(buffer: &mut [[u8; SPRITE]; PATTERN_LENGTH], chr: Vec<u8>) {
             // 16bit -> (8bit, 8bit) -> sprite
@@ -76,6 +83,7 @@ impl PPU {
             state: RefCell::new(state),
             display0: RefCell::new(texture0),
             display1: RefCell::new(texture1),
+            mirroring,
             /// I/O CPU Register
             ioc,
             canvas,
@@ -186,9 +194,9 @@ impl PPU {
             DisplayID::DISPLAY2 => BASE_ADDR_DISPLAY2,
             DisplayID::DISPLAY3 => BASE_ADDR_DISPLAY1,
             DisplayID::DISPLAY4 => BASE_ADDR_DISPLAY2,
-        } + sprite_idx/4 + line/4 * 8;
+        } + sprite_idx / 4
+            + line / 4 * 8;
         let attr = self.ioc.borrow().ppudata.read(addr);
-
     }
 
     pub fn sprite_flush(&self) -> Pattern {
@@ -272,7 +280,11 @@ impl PPU {
             .with_lock(None, |buffer: &mut [u8], pitch: usize| {
                 for idx in 0..DISPLAY_SPRITE_WIDTH {
                     let sprite_idx = line * DISPLAY_SPRITE_WIDTH + idx;
-                    self.get_attribute(line, sprite_idx % DISPLAY_SPRITE_WIDTH, DisplayID::DISPLAY1);
+                    self.get_attribute(
+                        line,
+                        sprite_idx % DISPLAY_SPRITE_WIDTH,
+                        DisplayID::DISPLAY1,
+                    );
                     for (pixel_idx, pixel) in self.pattern0[vram.read(sprite_idx + 0x2000) as usize]
                         .iter()
                         .enumerate()

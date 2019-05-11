@@ -11,8 +11,10 @@ use sdl2::video::Window;
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use ppu::Mirroring;
 use register::Register;
 use {cpu::CPU, ppu::PPU};
+
 pub(crate) type RcRefCell<T> = Rc<RefCell<T>>;
 
 pub(crate) enum WriteAddr {
@@ -40,7 +42,12 @@ pub struct Arch {
 }
 
 impl Arch {
-    pub fn new(rom: Vec<u8>, chr: Vec<u8>, canvas: RcRefCell<Canvas<Window>>) -> Arch {
+    pub fn new(
+        rom: Vec<u8>,
+        chr: Vec<u8>,
+        canvas: RcRefCell<Canvas<Window>>,
+        mirroring: Mirroring,
+    ) -> Arch {
         info!("PPU Register init");
         let ppu_reg = Rc::new(RefCell::new(PPURegister::default()));
         info!("CPU Register init");
@@ -55,7 +62,7 @@ impl Arch {
         };
 
         info!("PPU init");
-        let ppu = PPU::new(chr, ppu_reg, canvas);
+        let ppu = PPU::new(chr, ppu_reg, canvas, mirroring);
         info!("Init done");
         Arch { cpu, ppu }
     }

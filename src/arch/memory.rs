@@ -151,8 +151,8 @@ impl CPUMemory {
             unreachable!()
         // APU, PAD
         } else if addr < 0x4020usize {
-            unimplemented!("APU, PAD")
-        // Expand ROM
+
+            // Expand ROM
         } else {
             unimplemented!()
         }
@@ -179,11 +179,13 @@ impl PPUMemory {
         let PPUMemory(vram) = self;
 
         let addr = match addr {
-            0x0000...0x27C0 => addr,
-            0x2800...0x2FBF => addr - 0x0800,
-            0x2FC0...0x2FFF => addr - 0x08C0,
-            0x3000...0x3EFF => unreachable!(),
+            0x0000...0x27FF => addr,
+            // mirror 0x2000
+            0x2800...0x2FFF => addr - 0x0800,
+            0x3000...0x3EFF => addr - 0x1000,
             0x3F00...0x3F1F => addr,
+            0x3F20...0x3FFF => addr - 0x20,
+            0x4000...0xFFFF => unreachable!(),
             _ => unreachable!(),
         };
 
@@ -193,17 +195,19 @@ impl PPUMemory {
     pub(crate) fn write(&self, addr: usize, value: u8) {
         let PPUMemory(vram) = self;
 
+        println!("{:X}", addr);
         let addr = match addr {
-            0x0000...0x27C0 => addr,
-            0x2800...0x2FBF => addr - 0x0800,
-            0x2FC0...0x2FFF => addr - 0x08C0,
-            0x3000...0x3EFF => unreachable!(),
+            0x0000...0x27FF => addr,
+            // mirror 0x2000
+            0x2800...0x2FFF => addr - 0x0800,
+            0x3000...0x3EFF => addr - 0x1000,
             0x3F00...0x3F1F => addr,
             0x3F20...0x3FFF => addr - 0x20,
-            0x4000...0xFFFF => addr - 0xC00,
+            0x4000...0xFFFF => return,
             _ => unreachable!("PPU Write Address: {:X}", addr),
         };
 
+        println!("{:X}", addr);
         vram.borrow_mut()[addr] = value;
     }
 }

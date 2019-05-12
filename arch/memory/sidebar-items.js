@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["CPUMemory","WRAM: 2KByte IOP: PPU I/O IOA: APU I/O APU, PAD ROM: 32KByte"]]});

@@ -183,7 +183,13 @@ impl PPUMemory {
             // mirror 0x2000
             0x2800...0x2FFF => addr - 0x0800,
             0x3000...0x3EFF => addr - 0x1000,
-            0x3F00...0x3F1F => addr,
+            0x3F00...0x3F1F => match addr {
+                0x3F10 => 0x3F00,
+                0x3F14 => 0x3F04,
+                0x3F18 => 0x3F08,
+                0x3F1C => 0x3F0C,
+                _ => addr,
+            },
             0x3F20...0x3FFF => addr - 0x20,
             0x4000...0xFFFF => unreachable!(),
             _ => unreachable!(),
@@ -200,7 +206,13 @@ impl PPUMemory {
             // mirror 0x2000
             0x2800...0x2FFF => addr - 0x0800,
             0x3000...0x3EFF => addr - 0x1000,
-            0x3F00...0x3F1F => addr,
+            0x3F00...0x3F1F => match addr {
+                0x3F10 => 0x3F00,
+                0x3F14 => 0x3F04,
+                0x3F18 => 0x3F08,
+                0x3F1C => 0x3F0C,
+                _ => addr,
+            },
             0x3F20...0x3FFF => addr - 0x20,
             0x4000...0xFFFF => return,
             _ => unreachable!("PPU Write Address: {:X}", addr),

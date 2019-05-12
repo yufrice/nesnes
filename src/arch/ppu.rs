@@ -233,7 +233,7 @@ impl PPU {
                         sprite_idx % DISPLAY_SPRITE_WIDTH,
                         DisplayID::DISPLAY1,
                     );
-                    for (pixel_idx, pixel) in self.pattern0[vram.read(sprite_idx + 0x2000) as usize]
+                    for (pixel_idx, pixel) in self.pattern0[vram.read(sprite_idx + 0x2400) as usize]
                         .iter()
                         .enumerate()
                     {

@@ -209,11 +209,10 @@ impl CPU {
                 }
             }
             AddressingMode::IndirectX => {
-                let pre_addr = u16::from(self.fetch());
-                let x = u16::from(self.register.x.get());
-                let addr_low = pre_addr + x;
-                let addr_high = u16::from(self.fetch()).rotate_left(8);
-                Opeland::Address(addr_high + addr_low)
+                let pre_addr = u16::from(self.fetch()) + u16::from(self.register.x.get());
+                let addr_low = self.memory.read(pre_addr as usize & 0xFF);
+                let addr_high = u16::from(self.memory.read(1 + pre_addr as usize)) << 8;
+                Opeland::Address(u16::from(addr_low) + addr_high)
             }
             AddressingMode::IndirectY => {
                 let pre_addr = u16::from(self.fetch());

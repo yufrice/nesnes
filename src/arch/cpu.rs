@@ -11,7 +11,7 @@ pub struct CPU {
 impl CPU {
     pub(crate) fn fetch(&self) -> u8 {
         // PRGアドレス位置
-        let addr = 0x8000u16 + self.register.pc.get();
+        let addr = self.register.pc.get();
         self.register.pc_increment();
         self.memory.read(addr as usize)
     }

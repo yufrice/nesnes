@@ -137,9 +137,9 @@ impl CPUMemory {
                     ppu_reg.ppudata.write(usize::from(addr), value);
 
                     let counter = if 0 != (ppu_reg.ppuctrl.get() & 0x02) {
-                        1
-                    } else {
                         32
+                    } else {
+                        1
                     };
 
                     let addr = ppu_reg.ppuaddr.get();
@@ -151,8 +151,8 @@ impl CPUMemory {
             unreachable!()
         // APU, PAD
         } else if addr < 0x4020usize {
-            unimplemented!("APU, PAD")
-        // Expand ROM
+
+            // Expand ROM
         } else {
             unimplemented!()
         }
@@ -179,11 +179,19 @@ impl PPUMemory {
         let PPUMemory(vram) = self;
 
         let addr = match addr {
-            0x0000...0x27C0 => addr,
-            0x2800...0x2FBF => addr - 0x0800,
-            0x2FC0...0x2FFF => addr - 0x08C0,
-            0x3000...0x3EFF => unreachable!(),
-            0x3F00...0x3F1F => addr,
+            0x0000...0x27FF => addr,
+            // mirror 0x2000
+            0x2800...0x2FFF => addr - 0x0800,
+            0x3000...0x3EFF => addr - 0x1000,
+            0x3F00...0x3F1F => match addr {
+                0x3F10 => 0x3F00,
+                0x3F14 => 0x3F04,
+                0x3F18 => 0x3F08,
+                0x3F1C => 0x3F0C,
+                _ => addr,
+            },
+            0x3F20...0x3FFF => addr - 0x20,
+            0x4000...0xFFFF => unreachable!(),
             _ => unreachable!(),
         };
 
@@ -194,13 +202,19 @@ impl PPUMemory {
         let PPUMemory(vram) = self;
 
         let addr = match addr {
-            0x0000...0x27C0 => addr,
-            0x2800...0x2FBF => addr - 0x0800,
-            0x2FC0...0x2FFF => addr - 0x08C0,
-            0x3000...0x3EFF => unreachable!(),
-            0x3F00...0x3F1F => addr,
+            0x0000...0x27FF => addr,
+            // mirror 0x2000
+            0x2800...0x2FFF => addr - 0x0800,
+            0x3000...0x3EFF => addr - 0x1000,
+            0x3F00...0x3F1F => match addr {
+                0x3F10 => 0x3F00,
+                0x3F14 => 0x3F04,
+                0x3F18 => 0x3F08,
+                0x3F1C => 0x3F0C,
+                _ => addr,
+            },
             0x3F20...0x3FFF => addr - 0x20,
-            0x4000...0xFFFF => addr - 0xC00,
+            0x4000...0xFFFF => return,
             _ => unreachable!("PPU Write Address: {:X}", addr),
         };
 

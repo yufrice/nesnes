@@ -1,4 +1,4 @@
-use crate::arch::{Accumulate, cpu::CPU, register::State, Opeland, WriteAddr};
+use crate::arch::{cpu::CPU, register::State, Accumulate, Opeland, WriteAddr};
 
 #[derive(Debug, PartialEq)]
 pub enum OPCode {
@@ -135,7 +135,8 @@ impl Operation {
             0x0E => create(ASL, Absolute, 6),
             0x16 => create(ASL, ZeroPageX, 6),
             0x1E => create(ASL, AbsoluteX, 7),
-            // BIT
+            0x24 => create(BIT, ZeroPage, 3),
+            0x2C => create(BIT, Absolute, 4),
             0xC9 => create(CMP, Immediate, 2),
             0xC5 => create(CMP, ZeroPage, 3),
             0xD5 => create(CMP, ZeroPageX, 4),
@@ -155,7 +156,14 @@ impl Operation {
             0xCA => create(DEX, Implied, 2),
             // DEY
             0x88 => create(DEY, Implied, 2),
-            // EOR
+            0x49 => create(EOR, Immediate, 2),
+            0x45 => create(EOR, ZeroPage, 3),
+            0x55 => create(EOR, ZeroPageX, 4),
+            0x4D => create(EOR, Absolute, 4),
+            0x5D => create(EOR, AbsoluteX, 4),
+            0x59 => create(EOR, AbsoluteY, 4),
+            0x41 => create(EOR, IndirectX, 6),
+            0x51 => create(EOR, IndirectY, 5),
             // INC
             0xE6 => create(INC, ZeroPage, 5),
             0xF6 => create(INC, ZeroPageX, 6),
@@ -163,7 +171,7 @@ impl Operation {
             0xFE => create(INC, AbsoluteX, 7),
             // INX
             0xE8 => create(INX, Implied, 2),
-            // INY
+            0xC8 => create(INY, Implied, 2),
             // LSR
             0x09 => create(ORA, Immediate, 2),
             0x05 => create(ORA, ZeroPage, 3),
@@ -205,7 +213,7 @@ impl Operation {
             0x4C => create(JMP, Absolute, 3),
             0x6C => create(JMP, Indirect, 5),
             0x20 => create(JSR, Absolute, 6),
-            // RTS
+            0x60 => create(RTS, Implied, 6),
             // RTI
 
             // Load
@@ -241,13 +249,11 @@ impl Operation {
             0x96 => create(STX, ZeroPageY, 4),
             0x8E => create(STX, Absolute, 4),
             // STY
-            // TAX
-            // TAY
-            // TSX
-            // TXA
-            // TXS
+            0xAA => create(TAX, Implied, 2),
+            0xA8 => create(TAY, Implied, 2),
+            0xBA => create(TSX, Implied, 2),
+            0x8A => create(TXA, Implied, 2),
             0x9A => create(TXS, Implied, 2),
-            // TYA
             0x98 => create(TYA, Implied, 2),
 
             // Implied
@@ -270,13 +276,11 @@ impl CPU {
         let zero = value == 0;
         // 補数で負
         let neg = (value & 0x80).rotate_right(0x80) != 0;
-        self.register.p.set(State {
+        let state = &self.register.p;
+        state.set(State {
             n: neg,
-            v: false,
-            b: false,
-            i: false,
             z: zero,
-            c: false,
+            ..state.get()
         });
         match addr {
             WriteAddr::a => self.register.a.set(value),
@@ -370,6 +374,20 @@ impl CPU {
         self.nzc_withSet(result, WriteAddr::None);
     }
 
+    pub(crate) fn bit_test(&self, opeland: u8) {
+        let n = (opeland & 0x80) >> 7 == 1;
+        let v = (opeland & 0x40) >> 6 == 1;
+        let z = (opeland & self.register.a.get()) == 0;
+
+        let state = &self.register.p;
+        state.set(State {
+            n,
+            v,
+            z,
+            ..state.get()
+        });
+    }
+
     pub(crate) fn acc_op(&self, op: &OPCode, opeland: u8) {
         let pre_a = u16::from(self.register.a.get());
         let opeland = u16::from(opeland);
@@ -412,26 +430,28 @@ impl CPU {
         }
     }
 
-    pub(crate) fn jump_op(&self, op: &OPCode, opeland: u16) {
-        self.register.soft_reset();
-        let addr = opeland - 0x8000;
+    pub(crate) fn jump_op(&self, op: &OPCode, addr: u16) {
         match op {
-            JMP => {
-                self.register.pc.set(addr)
-            }
+            JMP => self.register.pc.set(addr),
             JSR => {
-                let pc = self.register.pc.get() - 1;
+                let pc = self.register.pc.get();
                 let pc_high = (pc >> 8) as u8 & 0xFF;
                 let pc_low = (pc & 0xFF) as u8;
                 self.stack_push(pc_high);
                 self.stack_push(pc_low);
                 self.register.pc.set(addr);
             }
+            _ => unreachable!(),
+        }
+    }
+
+    pub(crate) fn return_op(&self, op: &OPCode) {
+        match op {
             RTS => {
                 let pc_low = u16::from(self.stack_pop());
                 let pc_high = u16::from(self.stack_pop()) << 8;
-                self.register.pc.set(pc_low + pc_high)
-                },
+                self.register.pc.set(pc_low + pc_high);
+            }
             RTI => unimplemented!(),
             _ => unreachable!(),
         }
@@ -471,7 +491,6 @@ impl CPU {
             STY => self.memory.write(self.register.y.get(), opeland),
             _ => unreachable!(),
         };
-        self.register.soft_reset();
     }
 
     pub(crate) fn branch_op(&self, op: &OPCode, opeland: u16) {
@@ -486,7 +505,6 @@ impl CPU {
             BMI if self.register.p.get().n => self.register.pc.set(opeland),
             _ => (),
         };
-        self.register.soft_reset();
     }
 }
 

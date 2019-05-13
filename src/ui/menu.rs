@@ -17,9 +17,9 @@ pub(crate) fn generate_menu(canvas: &mut Canvas<Window>) {
     let texture_creator = canvas.texture_creator();
     canvas.set_draw_color(Color::RGB(0xFF, 0x00, 0xC4));
 
-    let menu_item = ["Load", "Reset", "Setting", "Quit"];
+    let menu_item = ["[L]oad", "[R]eset", "[S]etting", "[Q]uit"];
 
-    const PITCH: i32 = 24;
+    const PITCH: i32 = 26;
     for (idx, item) in menu_item.iter().enumerate() {
         let surface = font
             .render(item)

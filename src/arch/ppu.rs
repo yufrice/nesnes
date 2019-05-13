@@ -14,11 +14,25 @@ use crate::{
 
 pub type Pattern = [[u8; SPRITE]; PATTERN_LENGTH];
 
+pub(crate) enum DisplayID {
+    DISPLAY1,
+    DISPLAY2,
+    DISPLAY3,
+    DISPLAY4,
+}
+
+pub enum Mirroring {
+    Horizontal,
+    Vertial,
+}
+
 pub(crate) struct PPU {
     /// CHR
     pub(crate) pattern0: Pattern,
     pub(crate) state: RefCell<PPUState>,
-    pub(crate) display: RefCell<Texture>,
+    pub(crate) display0: RefCell<Texture>,
+    pub(crate) display1: RefCell<Texture>,
+    pub(crate) mirroring: Mirroring,
     pub(crate) ioc: RcRefCell<PPURegister>,
     pub(crate) canvas: RcRefCell<Canvas<Window>>,
 }
@@ -28,6 +42,7 @@ impl PPU {
         chr: Vec<u8>,
         ioc: RcRefCell<PPURegister>,
         canvas: RcRefCell<Canvas<Window>>,
+        mirroring: Mirroring,
     ) -> PPU {
         fn parse_sprite(buffer: &mut [[u8; SPRITE]; PATTERN_LENGTH], chr: Vec<u8>) {
             // 16bit -> (8bit, 8bit) -> sprite
@@ -46,7 +61,15 @@ impl PPU {
         let buffer = &mut [[0u8; SPRITE]; PATTERN_LENGTH];
 
         let texture_creator = canvas.borrow().texture_creator();
-        let mut texture = texture_creator
+        let mut texture0 = texture_creator
+            .create_texture_streaming(
+                PixelFormatEnum::RGB24,
+                DISPLAY_WIDTH as u32,
+                DISPLAY_HEIGHT as u32,
+            )
+            .unwrap();
+
+        let mut texture1 = texture_creator
             .create_texture_streaming(
                 PixelFormatEnum::RGB24,
                 DISPLAY_WIDTH as u32,
@@ -58,7 +81,9 @@ impl PPU {
         PPU {
             pattern0: *buffer,
             state: RefCell::new(state),
-            display: RefCell::new(texture),
+            display0: RefCell::new(texture0),
+            display1: RefCell::new(texture1),
+            mirroring,
             /// I/O CPU Register
             ioc,
             canvas,
@@ -93,11 +118,12 @@ impl PPU {
         }
     }
 
-    pub fn sprite_flush(&self) -> Pattern {
-        self.pattern0
-    }
-
-    pub(crate) fn sprite_generate(&self) {
+    pub(crate) fn get_attribute(
+        &self,
+        line: usize,
+        sprite_idx: usize,
+        display: DisplayID,
+    ) -> [[u8; 0x03]; 0x04] {
         // RGB 0x40色
         static color_palettes: [[u8; 0x03]; 0x40] = [
             [84, 84, 84],
@@ -166,15 +192,48 @@ impl PPU {
             [0, 0, 0],
         ];
 
+        const BASE_ADDR_DISPLAY1: usize = 0x23C0;
+        const BASE_ADDR_DISPLAY2: usize = 0x27C0;
+        let addr = match display {
+            DisplayID::DISPLAY1 => BASE_ADDR_DISPLAY1,
+            DisplayID::DISPLAY2 => BASE_ADDR_DISPLAY2,
+            DisplayID::DISPLAY3 => BASE_ADDR_DISPLAY1,
+            DisplayID::DISPLAY4 => BASE_ADDR_DISPLAY2,
+        } + sprite_idx / 4
+            + line / 4 * 8;
+        let attr = self.ioc.borrow().ppudata.read(addr);
+        let palette = attr & 0x02;
+        let color0 = self.ioc.borrow().ppudata.read(0x3F00 + palette as usize) as usize;
+        let color1 = self.ioc.borrow().ppudata.read(0x3f01 + palette as usize) as usize;
+        let color2 = self.ioc.borrow().ppudata.read(0x3f02 + palette as usize) as usize;
+        let color3 = self.ioc.borrow().ppudata.read(0x3f02 + palette as usize) as usize;
+        [
+            color_palettes[color0],
+            color_palettes[color1],
+            color_palettes[color2],
+            color_palettes[color3],
+        ]
+    }
+
+    pub fn sprite_flush(&self) -> Pattern {
+        self.pattern0
+    }
+
+    pub(crate) fn sprite_generate(&self) {
         let vram = &self.ioc.borrow().ppudata;
 
         let line = self.state.borrow().line as usize / 8usize;
-        self.display
+        self.display0
             .borrow_mut()
             .with_lock(None, |buffer: &mut [u8], pitch: usize| {
                 for idx in 0..DISPLAY_SPRITE_WIDTH {
                     let sprite_idx = line * DISPLAY_SPRITE_WIDTH + idx;
-                    for (pixel_idx, pixel) in self.pattern0[vram.read(sprite_idx + 0x2000) as usize]
+                    let color = self.get_attribute(
+                        line,
+                        sprite_idx % DISPLAY_SPRITE_WIDTH,
+                        DisplayID::DISPLAY1,
+                    );
+                    for (pixel_idx, pixel) in self.pattern0[vram.read(sprite_idx + 0x2400) as usize]
                         .iter()
                         .enumerate()
                     {
@@ -188,12 +247,9 @@ impl PPU {
                             + pixel_x_idx * 3
                             + pixel_y_idx * 3 * SPRITE_SIDE * DISPLAY_SPRITE_WIDTH;
 
-                        // ラインとスプライト位置から属性テーブル参照するようにする
-                        let color = color_palettes[*pixel as usize];
-
-                        buffer[offset] = color[0];
-                        buffer[offset + 1] = color[1];
-                        buffer[offset + 2] = color[2];
+                        buffer[offset] = color[*pixel as usize][0];
+                        buffer[offset + 1] = color[*pixel as usize][1];
+                        buffer[offset + 2] = color[*pixel as usize][2];
                     }
                 }
             })
@@ -204,7 +260,7 @@ impl PPU {
         self.canvas
             .borrow_mut()
             .copy(
-                &self.display.borrow(),
+                &self.display0.borrow(),
                 None,
                 Some(Rect::new(
                     0,

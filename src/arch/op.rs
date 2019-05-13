@@ -273,7 +273,7 @@ impl CPU {
         state.set(State {
             n: neg,
             z: zero,
-            .. state.get()
+            ..state.get()
         });
         match addr {
             WriteAddr::a => self.register.a.set(value),

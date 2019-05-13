@@ -156,7 +156,14 @@ impl Operation {
             0xCA => create(DEX, Implied, 2),
             // DEY
             0x88 => create(DEY, Implied, 2),
-            // EOR
+            0x49 => create(EOR, Immediate, 2),
+            0x45 => create(EOR, ZeroPage, 3),
+            0x55 => create(EOR, ZeroPageX, 4),
+            0x4D => create(EOR, Absolute, 4),
+            0x5D => create(EOR, AbsoluteX, 4),
+            0x59 => create(EOR, AbsoluteY, 4),
+            0x41 => create(EOR, IndirectX, 6),
+            0x51 => create(EOR, IndirectY, 5),
             // INC
             0xE6 => create(INC, ZeroPage, 5),
             0xF6 => create(INC, ZeroPageX, 6),

@@ -430,8 +430,7 @@ impl CPU {
         }
     }
 
-    pub(crate) fn jump_op(&self, op: &OPCode, opeland: u16) {
-        let addr = opeland - 0x8000;
+    pub(crate) fn jump_op(&self, op: &OPCode, addr: u16) {
         match op {
             JMP => self.register.pc.set(addr),
             JSR => {

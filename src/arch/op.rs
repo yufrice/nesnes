@@ -428,7 +428,7 @@ impl CPU {
         match op {
             JMP => self.register.pc.set(addr),
             JSR => {
-                let pc = self.register.pc.get() - 1;
+                let pc = self.register.pc.get() + 1;
                 let pc_high = (pc >> 8) as u8 & 0xFF;
                 let pc_low = (pc & 0xFF) as u8;
                 self.stack_push(pc_high);
@@ -444,7 +444,7 @@ impl CPU {
             RTS => {
                 let pc_low = u16::from(self.stack_pop());
                 let pc_high = u16::from(self.stack_pop()) << 8;
-                self.register.pc.set(pc_low + pc_high);
+                self.register.pc.set(pc_low + pc_high + 1);
                 self.register.pc_increment();
             }
             RTI => unimplemented!(),

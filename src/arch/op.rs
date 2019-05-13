@@ -269,13 +269,11 @@ impl CPU {
         let zero = value == 0;
         // 補数で負
         let neg = (value & 0x80).rotate_right(0x80) != 0;
-        self.register.p.set(State {
+        let state = &self.register.p;
+        state.set(State {
             n: neg,
-            v: false,
-            b: false,
-            i: false,
             z: zero,
-            c: false,
+            .. state.get()
         });
         match addr {
             WriteAddr::a => self.register.a.set(value),
@@ -426,7 +424,6 @@ impl CPU {
     }
 
     pub(crate) fn jump_op(&self, op: &OPCode, opeland: u16) {
-        self.register.soft_reset();
         let addr = opeland - 0x8000;
         match op {
             JMP => self.register.pc.set(addr),
@@ -489,7 +486,6 @@ impl CPU {
             STY => self.memory.write(self.register.y.get(), opeland),
             _ => unreachable!(),
         };
-        self.register.soft_reset();
     }
 
     pub(crate) fn branch_op(&self, op: &OPCode, opeland: u16) {
@@ -504,7 +500,6 @@ impl CPU {
             BMI if self.register.p.get().n => self.register.pc.set(opeland),
             _ => (),
         };
-        self.register.soft_reset();
     }
 }
 

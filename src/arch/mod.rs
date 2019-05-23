@@ -1,3 +1,4 @@
+pub mod apu;
 pub mod cpu;
 pub mod memory;
 pub mod op;
@@ -70,7 +71,7 @@ impl Arch {
     pub fn frame(&self) {
         let addr = self.cpu.fetch();
         let opecode = op::Operation::new(addr);
-        // info!("{:?}", opecode);
+        // info!("{:X} {:?}", self.cpu.register.pc.get(), opecode);
         self.cpu.exec(&opecode);
         self.ppu.run(3 * opecode.cycle);
     }

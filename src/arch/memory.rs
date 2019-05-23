@@ -1,6 +1,8 @@
-use crate::arch::RcRefCell;
 use std::cell::{Cell, RefCell};
 use std::ops::Not;
+
+use crate::arch::apu::APU;
+use crate::arch::RcRefCell;
 
 /// WRAM: 2KByte
 /// IOP: PPU I/O
@@ -14,8 +16,10 @@ pub struct CPUMemory {
     pub(crate) wram: RefCell<[u8; 0x0800]>,
     /// PPUレジスタ
     pub(crate) iop: RcRefCell<PPURegister>,
-    /// APU, PAD
-    pub(crate) ioa: [u8; 0x0020],
+    /// APU
+    pub(crate) apu: APU,
+    /// PAD
+    pub(crate) pad: RefCell<[u8; 0x0002]>,
     /// ROMプログラム部
     pub(crate) prg: Vec<u8>,
 }
@@ -25,7 +29,8 @@ impl CPUMemory {
         CPUMemory {
             wram: RefCell::new([0x00; 0x0800]),
             iop: prg,
-            ioa: [0x00; 0x0020],
+            apu: APU::default(),
+            pad: RefCell::new([0x00; 0x0002]),
             prg: rom,
         }
     }
@@ -71,7 +76,7 @@ impl CPUMemory {
             unreachable!()
         // APU, PAD
         } else if addr < 0x4020usize {
-            unimplemented!("APU, PAD")
+            unreachable!()
         // Expand ROM
         } else if addr < 0x6000usize {
             unimplemented!("Ex ROM")
@@ -151,8 +156,15 @@ impl CPUMemory {
             unreachable!()
         // APU, PAD
         } else if addr < 0x4020usize {
-
-            // Expand ROM
+            match addr {
+                0x4000...0x4015 => self.apu.write(addr, value),
+                0x4016 => self.pad.borrow_mut()[0] = value,
+                0x4017 => {
+                    self.apu.write(addr, value);
+                    self.pad.borrow_mut()[1] = value;
+                },
+                _ => (),
+            }
         } else {
             unimplemented!()
         }

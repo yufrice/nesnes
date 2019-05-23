@@ -26,7 +26,19 @@ impl APU {
             0x4004 => self.pulse2.borrow_mut().update_ctrl0(value),
             0x4005 => self.pulse2.borrow_mut().update_ctrl1(value),
             0x4006 => self.pulse2.borrow_mut().timer_low = value,
-            0x4007 ... 0x4017 => unimplemented!(),
+            0x4007 ... 0x4008 => unimplemented!(),
+            0x4009 => (),
+            0x4010 => {
+                self.dmc.borrow_mut().is_irq = value & 0b1000_0000 != 0;
+                self.dmc.borrow_mut().is_loop = value & 0b0100_0000 != 0;
+                self.dmc.borrow_mut().frequency = value & 0b0000_1111;
+            },
+            0x4011 => self.dmc.borrow_mut().load_counter = value & 0b0111_1111,
+            0x4012 => self.dmc.borrow_mut().sample_address = value,
+            0x4013 => self.dmc.borrow_mut().sample_length = value,
+            0x4014 => unimplemented!(),
+            0x4015 => unimplemented!(),
+            0x4017 => unimplemented!(),
             _ => unreachable!(),
         }
     }

@@ -1,1 +1,1 @@
-initSidebarItems({"mod":[["cpu",""],["memory",""],["op",""],["ppu",""],["register",""]],"struct":[["Arch",""]],"trait":[["Accumulate",""]]});
+initSidebarItems({"mod":[["apu",""],["cpu",""],["memory",""],["op",""],["ppu",""],["register",""]],"struct":[["Arch",""]],"trait":[["Accumulate",""]]});
